@@ -2,4 +2,12 @@
     display: grid;
     grid-template-columns: repeat(var(--columns), 1fr);
     grid-template-rows: repeat(var(--rows), 1fr);
+    margin: 5% 25%;
+}
+
+app-tile {
+    aspect-ratio: 1;
+    width: -webkit-fill-available;
+    background-color: aquamarine;
+    border: 1px dashed;
 }
