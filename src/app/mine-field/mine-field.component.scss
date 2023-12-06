@@ -12,8 +12,8 @@ main {
     // variables let typescript define # of rows & cols
     grid-template-columns: repeat(var(--columns), 1fr);
     grid-template-rows: repeat(var(--rows), 1fr);
-    // size each tile appropriately 
-    width: 25%;
+    // size tiles 
+    width: min(60vw, 60vh); 
     aspect-ratio: 1;
 }
 
@@ -24,11 +24,3 @@ app-tile {
     align-items: center;
     justify-content: center;
 }
-
-// bigger tiles on smaller screen 
-@media only screen and (max-width: 800px) {
-    .mine-field {
-        // size each tile appropriately 
-        width: 50%;
-    }
-  }
