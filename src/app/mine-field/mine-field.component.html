@@ -1,8 +1,12 @@
 <main>
     <p>difficult: {{ difficulty }}</p>
     <div class="mine-field" [ngStyle]="{'--columns': x_cols, '--rows': y_rows}">
-        <app-tile
-            *ngFor="let num of tiles; let i = index;" 
-        ></app-tile>
+        <app-tile 
+            class="tile"
+           *ngFor="let tile of tiles; trackBy: trackByTile"
+           [isMine]="tile.isMine"
+           [adjacentMines]="tile.adjacentMines"
+        >
+        </app-tile>
     </div>
-</main>
+</main> 

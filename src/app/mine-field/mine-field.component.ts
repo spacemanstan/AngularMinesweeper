@@ -52,25 +52,25 @@ export class MineFieldComponent {
   }
 
   generateTiles(): void {
-    this.tiles = Array(this.x_cols * this.y_rows);
-
     for (let tileIndex = 0; tileIndex < this.x_cols * this.y_rows; ++tileIndex) {
-      this.tiles[tileIndex] = new TileComponent();
-      this.tiles[tileIndex].isMine = false;
+      const tile = new TileComponent();
+      tile.isMine = false;
+      tile.adjacentMines = 0;
+      this.tiles.push(tile);
     }
 
-    // let placed = 0;
-    // do {
-    //   const randomElement = this.tiles[Math.floor(Math.random() * this.tiles.length)];
+    let placed = 0;
+    do {
+      const randomElement = this.tiles[Math.floor(Math.random() * this.tiles.length)];
 
-    //   if (!randomElement.isMine) {
-    //     randomElement.isMine = true;
-    //     ++placed;
-    //   }
-    // } while (placed < this.mines);
+      if (!randomElement.isMine) {
+        randomElement.isMine = true;
+        ++placed;
+      }
+    } while (placed < this.mines);
+  }
 
-    this.tiles[0].isMine = true;
-    
-    console.log('TileComponent instance:', this.tiles[0]);
+  trackByTile(index: number, item: any): any {
+    return index; // or return a unique identifier if available
   }
 }
