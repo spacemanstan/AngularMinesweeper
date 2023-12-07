@@ -1,13 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TileComponent } from '../tile/tile.component';
-import { randomInt } from 'crypto';
-
-enum Difficulty {
-  Easy = 'easy',
-  Medium = 'medium',
-  Hard = 'hard'
-}
 
 @Component({
   selector: 'app-mine-field',
@@ -19,7 +12,7 @@ enum Difficulty {
 export class MineFieldComponent {
   tiles: TileComponent[] = [];
 
-  @Input() difficulty: Difficulty = Difficulty.Easy;
+  @Input() difficulty: 'easy' | 'medium' | 'hard' = 'easy';
 
   x_cols = 10;
   y_rows = 10;
@@ -29,19 +22,19 @@ export class MineFieldComponent {
     this.setDifficulty(this.difficulty);
   }
 
-  setDifficulty(difficulty: Difficulty): void {
+  setDifficulty(difficulty: any): void {
     switch (difficulty) {
-      case Difficulty.Easy:
+      case 'easy':
         this.x_cols = 5;
         this.y_rows = 5;
         this.mines = 5;
         break;
-      case Difficulty.Medium:
+      case 'medium':
         this.x_cols = 7;
         this.y_rows = 7;
         this.mines = 7;
         break;
-      case Difficulty.Hard:
+      case 'hard':
         this.x_cols = 10;
         this.y_rows = 10;
         this.mines = 10;
@@ -54,9 +47,7 @@ export class MineFieldComponent {
   generateTiles(): void {
     for (let tileIndex = 0; tileIndex < this.x_cols * this.y_rows; ++tileIndex) {
       const tile = new TileComponent();
-      tile.isMine = false;
-      tile.adjacentMines = 0;
-      this.tiles.push(tile);
+      this.tiles[tileIndex] = tile;
     }
 
     let placed = 0;
@@ -70,7 +61,21 @@ export class MineFieldComponent {
     } while (placed < this.mines);
   }
 
-  trackByTile(index: number, item: any): any {
-    return index; // or return a unique identifier if available
+  checkTile(tile: TileComponent) {
+    // dont check flagged tiles
+    // if (tile.flagged) { return; }
+
+    tile.isMine = !tile.isMine;
+  }
+
+  flagTile(tile: TileComponent) {
+    // cant flag revealed tiles
+    if (tile.revealed) {
+      tile.flagged = false;
+      return;
+    }
+
+    // flag or unflag
+    tile.flagged = !tile.flagged;
   }
 }

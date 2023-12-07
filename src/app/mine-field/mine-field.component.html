@@ -3,9 +3,16 @@
     <div class="mine-field" [ngStyle]="{'--columns': x_cols, '--rows': y_rows}">
         <app-tile 
             class="tile"
-           *ngFor="let tile of tiles; trackBy: trackByTile"
-           [isMine]="tile.isMine"
-           [adjacentMines]="tile.adjacentMines"
+
+            *ngFor="let tile of this.tiles"
+
+            [revealed]="tile.revealed"
+            [isMine]="tile.isMine"
+            [flagged]="tile.flagged"
+            [adjacentMines]="tile.adjacentMines"
+            
+            (click)="checkTile(tile)"
+            (contextmenu)="$event.preventDefault(); flagTile(tile)"
         >
         </app-tile>
     </div>

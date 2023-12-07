@@ -1,2 +1,7 @@
-<div>{{ isMine }}</div>
-<div>{{ adjacentMines }}</div>
+<ng-template [ngIf]="flagged">
+    <i class="fa-solid fa-flag"></i>
+</ng-template>
+<ng-template [ngIf]="!revealed">
+    <ng-template [ngIf]="isMine"><i class="fa-solid fa-bomb"></i></ng-template>
+    <ng-template [ngIf]="!isMine">{{adjacentMines}}</ng-template>
+</ng-template>
