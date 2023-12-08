@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TileComponent {
-  @Input() revealed: boolean = true;
+  @Input() revealed: boolean = false;
   @Input() isMine: boolean = false;
   @Input() flagged: boolean = false;
   @Input() adjacentMines: number = 0;

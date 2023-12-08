@@ -13,11 +13,12 @@ main {
     grid-template-columns: repeat(var(--columns), 1fr);
     grid-template-rows: repeat(var(--rows), 1fr);
     // size tiles dynamically 
-    width: min(60vw, 60vh); 
+    width: min(60vw, 60vh);
     aspect-ratio: 1;
 }
 
 app-tile {
+    position: relative;
     background-color: lavenderblush;
     border: 1px dashed;
     display: flex;
@@ -26,5 +27,21 @@ app-tile {
 
     ::ng-deep svg {
         padding: 20%;
+    }
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%; 
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8); 
+        transition: transform 0.3s ease; 
+        z-index: 1; 
+    }
+
+    &.revealed-class::before {
+        transform: scale(0); /* Scale down to hide the cover */
     }
 }

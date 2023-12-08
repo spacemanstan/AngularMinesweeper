@@ -11,6 +11,8 @@
             [flagged]="tile.flagged"
             [adjacentMines]="tile.adjacentMines"
             
+            [ngClass]="{'revealed-class': tile.revealed}"
+            
             (click)="checkTile(tile)"
             (contextmenu)="$event.preventDefault(); flagTile(tile)"
         >
