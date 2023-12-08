@@ -18,9 +18,13 @@ main {
 }
 
 app-tile {
-    background-color: aquamarine;
+    background-color: lavenderblush;
     border: 1px dashed;
     display: flex;
     align-items: center;
     justify-content: center;
+
+    ::ng-deep svg {
+        padding: 20%;
+    }
 }

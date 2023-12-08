@@ -52,11 +52,30 @@ export class MineFieldComponent {
 
     let placed = 0;
     do {
-      const randomElement = this.tiles[Math.floor(Math.random() * this.tiles.length)];
+      const randomIndex = Math.floor(Math.random() * this.tiles.length);
+      const randomElement = this.tiles[randomIndex];
 
       if (!randomElement.isMine) {
-        randomElement.isMine = true;
-        ++placed;
+        randomElement.isMine = true; // place mine
+        ++placed; // update counter
+
+        // update adjacent tiles to mine
+        // update above tile (past first row)
+        if(randomIndex >= this.y_rows) {
+          this.tiles[randomIndex - this.y_rows].adjacentMines++;
+        }
+        // update below tile (before last row)
+        if(randomIndex < this.tiles.length - this.y_rows) {
+          this.tiles[randomIndex + this.y_rows].adjacentMines++;
+        }
+        // update left tile (all indices on right most edge % == 0)
+        if(randomIndex % this.x_cols > 0) {
+          this.tiles[randomIndex - 1].adjacentMines++;
+        }
+        // update right tile (index to right is not first column of new row)
+        if ((randomIndex + 1) % this.x_cols !== 0) {
+          this.tiles[randomIndex + 1].adjacentMines++;
+        }
       }
     } while (placed < this.mines);
   }
@@ -65,7 +84,9 @@ export class MineFieldComponent {
     // dont check flagged tiles
     // if (tile.flagged) { return; }
 
-    tile.isMine = !tile.isMine;
+    // tile.isMine = !tile.isMine;
+
+    tile.revealed = !tile.revealed;
   }
 
   flagTile(tile: TileComponent) {
