@@ -15,5 +15,11 @@ export class TileComponent {
   @Input() flagged: boolean = false;
   @Input() adjacentMines: number = 0;
 
+  public index: number = -1;
+
   constructor() {}
+
+  setIndex(index: number): void {
+    this.index = index;
+  }
 }

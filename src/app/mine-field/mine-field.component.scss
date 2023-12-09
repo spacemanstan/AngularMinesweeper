@@ -29,6 +29,10 @@ app-tile {
         padding: 20%;
     }
 
+    &.revealed-class {
+        background-color: lavender;
+    }
+
     &::before {
         content: '';
         position: absolute;
@@ -37,11 +41,12 @@ app-tile {
         width: 100%; 
         height: 100%;
         background-color: rgba(0, 0, 0, 0.8); 
-        transition: transform 0.3s ease; 
+        transition: transform 0.420s ease; 
+        border-radius: 0.1rem;
         z-index: 1; 
     }
 
     &.revealed-class::before {
-        transform: scale(0); /* Scale down to hide the cover */
+        transform: scale(0); 
     }
 }
