@@ -1,6 +1,8 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TileComponent } from '../tile/tile.component';
+// allowImportingTsExtensions must be enabled for this
+import { fisherYatesShuffle } from './shuffle';
 
 @Component({
   selector: 'app-mine-field',
@@ -14,12 +16,13 @@ export class MineFieldComponent {
   tiles: TileComponent[] = [];
 
   // temporary difficulty selector
-  @Input() difficulty: 'easy' | 'medium' | 'hard' = 'easy';
+  @Input() difficulty: 'easy' | 'medium' | 'hard' = 'hard';
 
   x_cols = 10; // width of minefield
   y_rows = 10; // height of minefield
   mines = 10; // # of mines in minefield
   spawnIndex = -1 // track first click index, prevent gameover on first click
+  gameOver = false;
 
   constructor() {
     // intializer function temporarily
@@ -57,6 +60,9 @@ export class MineFieldComponent {
    * Generates the tiles for the minefield with random mine placement.
    */
   generateTiles(): void {
+    // set or rest gameover flag
+    this.gameOver = false;
+
     // intialize array with default tilecomponents, html passes default values as inputs
     for (let tileIndex = 0; tileIndex < this.x_cols * this.y_rows; ++tileIndex) {
       const tile = new TileComponent(); // create new tile
@@ -132,6 +138,8 @@ export class MineFieldComponent {
       adjacentTiles.push(this.tiles[tileIndex + this.y_rows + 1]);
     }
 
+    fisherYatesShuffle(adjacentTiles);
+
     return adjacentTiles;
   }
 
@@ -159,6 +167,33 @@ export class MineFieldComponent {
     if (tile.flagged || tile.revealed) { return }
 
     this.revealTile(tile);
+
+    if (tile.isMine) {
+      tile.exploded = true;
+
+      this.endGame();
+    }
+  }
+
+  async endGame() {
+    // trip gameover flag
+    this.gameOver = true;
+
+    // reveal all and unflag
+    for (const tile of this.tiles) {
+      await this.delay(10); // small delay makes it look cooler
+      tile.revealed = true;
+      tile.flagged = false;
+    }
+
+    // not sure if I like this yet
+    // slowly explode other bombs 
+    for (const tile of this.tiles) {
+      if (tile.isMine) {
+        await this.delay(1500);
+        tile.exploded = true;
+      }
+    }
   }
 
   /**
@@ -199,5 +234,7 @@ export class MineFieldComponent {
       setTimeout(resolve, ms);
     });
   }
+
+  
 
 }
