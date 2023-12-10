@@ -21,7 +21,8 @@ export class MineFieldComponent {
   x_cols = 10; // width of minefield
   y_rows = 10; // height of minefield
   mines = 10; // # of mines in minefield
-  spawnIndex = -1 // track first click index, prevent gameover on first click
+  
+  firstMove = true;
   gameOver = false;
 
   constructor() {
@@ -53,6 +54,9 @@ export class MineFieldComponent {
         break;
     }
 
+    this.firstMove = true;
+    this.gameOver = false;
+
     this.generateTiles();
   }
 
@@ -60,20 +64,26 @@ export class MineFieldComponent {
    * Generates the tiles for the minefield with random mine placement.
    */
   generateTiles(): void {
-    // set or rest gameover flag
-    this.gameOver = false;
-
     // intialize array with default tilecomponents, html passes default values as inputs
     for (let tileIndex = 0; tileIndex < this.x_cols * this.y_rows; ++tileIndex) {
       const tile = new TileComponent(); // create new tile
       tile.setIndex(tileIndex); // tiles know their position for easier code later
       this.tiles[tileIndex] = tile; // set index to new tile
     }
+  }
 
+  /**
+   * random mine placement.
+   * @param startIndex - index of first tile clicked to prevent first click game over
+   */
+  placeMines(startIndex: number): void {
     // greedy algorithm, randomly try to place mines until all are placed
     let placed = 0;
     do {
       const randomIndex = Math.floor(Math.random() * this.tiles.length);
+      
+      if(randomIndex == startIndex) continue;
+      
       const randomElement = this.tiles[randomIndex];
 
       if (!randomElement.isMine) {
@@ -161,6 +171,11 @@ export class MineFieldComponent {
    * @param tile - The tile to check and reveal if allowed.
    */
   checkTile(tile: TileComponent) {
+    if(this.firstMove) {
+      this.placeMines(tile.index);
+      this.firstMove = false;
+    }
+
     // if not flagged or revealed, then reveal
     if (tile.flagged || tile.revealed) { return }
 
