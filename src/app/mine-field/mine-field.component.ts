@@ -138,8 +138,6 @@ export class MineFieldComponent {
       adjacentTiles.push(this.tiles[tileIndex + this.y_rows + 1]);
     }
 
-    fisherYatesShuffle(adjacentTiles);
-
     return adjacentTiles;
   }
 
@@ -186,13 +184,21 @@ export class MineFieldComponent {
       tile.flagged = false;
     }
 
-    // not sure if I like this yet
     // slowly explode other bombs 
+    let unexploded: TileComponent[] = [];
+
     for (const tile of this.tiles) {
-      if (tile.isMine) {
-        await this.delay(1500);
-        tile.exploded = true;
+      if (tile.isMine && !tile.exploded) {
+        unexploded.push(tile);
       }
+    }
+
+    // randomize explode order
+    fisherYatesShuffle(unexploded);
+
+    for (const bomb of unexploded) {
+      await this.delay(1500);
+      bomb.exploded = true;
     }
   }
 
@@ -202,25 +208,24 @@ export class MineFieldComponent {
    * @param tile - The tile to reveal.
    */
   async revealTile(tile: TileComponent) {
-    // can't reveal flagged or revealed tiles 
     if (tile.revealed || tile.flagged) { return; }
 
     tile.revealed = true;
 
-    if (tile.adjacentMines !== 0) {
-      return;
-    }
+    if (tile.adjacentMines === 0) {
+      const adjacentTiles = this.getAdjacentTiles(tile);
 
-    const adjacentTiles = this.getAdjacentTiles(tile);
+      // short time delay for cascade reveal effect
+      await this.delay(100);
 
-    // short time delay for cool cascade effect
-    await this.delay(100);
-
-    // check if neighbors need to be revealed
-    for (const adjTile of adjacentTiles) {
-      await this.revealTile(adjTile);
+      // Revealing adjacent tiles asynchronously using Promise.all
+      await Promise.all(adjacentTiles.map(async (adjTile) => {
+        // await this.delay(100);
+        await this.revealTile(adjTile);
+      }));
     }
   }
+
 
   /**
    * Creates a delay for a specified time using setTimeout.
@@ -234,7 +239,4 @@ export class MineFieldComponent {
       setTimeout(resolve, ms);
     });
   }
-
-  
-
 }
