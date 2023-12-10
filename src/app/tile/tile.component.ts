@@ -12,6 +12,7 @@ import { CommonModule } from '@angular/common';
 export class TileComponent {
   @Input() revealed: boolean = false;
   @Input() isMine: boolean = false;
+  @Input() exploded: boolean = false;
   @Input() flagged: boolean = false;
   @Input() adjacentMines: number = 0;
 

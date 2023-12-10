@@ -1,6 +1,8 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TileComponent } from '../tile/tile.component';
+// allowImportingTsExtensions must be enabled for this
+import { fisherYatesShuffle } from './shuffle';
 
 @Component({
   selector: 'app-mine-field',
@@ -10,25 +12,33 @@ import { TileComponent } from '../tile/tile.component';
   styleUrl: './mine-field.component.scss'
 })
 export class MineFieldComponent {
+  // tiles are stored as 1D array but rendered into 2D grid 
   tiles: TileComponent[] = [];
 
-  @Input() difficulty: 'easy' | 'medium' | 'hard' = 'easy';
+  // temporary difficulty selector
+  @Input() difficulty: 'easy' | 'medium' | 'hard' = 'hard';
 
-  x_cols = 10;
-  y_rows = 10;
-  mines = 10;
-
-  spawnIndex = -1
+  x_cols = 10; // width of minefield
+  y_rows = 10; // height of minefield
+  mines = 10; // # of mines in minefield
+  spawnIndex = -1 // track first click index, prevent gameover on first click
+  gameOver = false;
 
   constructor() {
+    // intializer function temporarily
     this.setDifficulty(this.difficulty);
   }
 
+  /**
+   * Sets the difficulty level of the game and initializes tiles accordingly.
+   * Temporary function until MineFieldComponent constructor is reworked for dimensions and mine parameters
+   * @param difficulty - The chosen difficulty level: 'easy', 'medium', or 'hard'.
+   */
   setDifficulty(difficulty: any): void {
     switch (difficulty) {
       case 'easy':
-        this.x_cols = 5;
-        this.y_rows = 5;
+        this.x_cols = 6;
+        this.y_rows = 6;
         this.mines = 3;
         break;
       case 'medium':
@@ -46,10 +56,49 @@ export class MineFieldComponent {
     this.generateTiles();
   }
 
+  /**
+   * Generates the tiles for the minefield with random mine placement.
+   */
+  generateTiles(): void {
+    // set or rest gameover flag
+    this.gameOver = false;
+
+    // intialize array with default tilecomponents, html passes default values as inputs
+    for (let tileIndex = 0; tileIndex < this.x_cols * this.y_rows; ++tileIndex) {
+      const tile = new TileComponent(); // create new tile
+      tile.setIndex(tileIndex); // tiles know their position for easier code later
+      this.tiles[tileIndex] = tile; // set index to new tile
+    }
+
+    // greedy algorithm, randomly try to place mines until all are placed
+    let placed = 0;
+    do {
+      const randomIndex = Math.floor(Math.random() * this.tiles.length);
+      const randomElement = this.tiles[randomIndex];
+
+      if (!randomElement.isMine) {
+        randomElement.isMine = true; // place mine
+        ++placed; // update counter
+
+        // inform neighbours
+        const adjacentTiles = this.getAdjacentTiles(randomElement);
+        for (const adjTile of adjacentTiles) {
+          adjTile.adjacentMines++;
+        }
+      }
+    } while (placed < this.mines);
+  }
+
+  /**
+  * build array of 8 potential adjacent tiles to provided tile
+  * @param tile - The tile for which adjacent tiles are retrieved.
+  * @returns An array of adjacent TileComponent instances.
+  */
   getAdjacentTiles(tile: TileComponent): TileComponent[] {
     let tileIndex = tile.index;
     let adjacentTiles: TileComponent[] = [];
 
+    // conditions to check adjacency for a 1d array holding 2d rendered items
     const isTopRow = tileIndex < this.y_rows;
     const isBottomRow = tileIndex >= this.tiles.length - this.y_rows;
     const isLeftColumn = tileIndex % this.x_cols === 0;
@@ -89,54 +138,15 @@ export class MineFieldComponent {
       adjacentTiles.push(this.tiles[tileIndex + this.y_rows + 1]);
     }
 
+    fisherYatesShuffle(adjacentTiles);
+
     return adjacentTiles;
   }
 
-  generateTiles(): void {
-    for (let tileIndex = 0; tileIndex < this.x_cols * this.y_rows; ++tileIndex) {
-      const tile = new TileComponent();
-      tile.setIndex(tileIndex);
-      this.tiles[tileIndex] = tile;
-    }
-
-    let placed = 0;
-    do {
-      const randomIndex = Math.floor(Math.random() * this.tiles.length);
-      const randomElement = this.tiles[randomIndex];
-
-      if (!randomElement.isMine) {
-        randomElement.isMine = true; // place mine
-        ++placed; // update counter
-
-        // inform neighbours
-        const adjacentTiles = this.getAdjacentTiles(randomElement);
-        for (const adjTile of adjacentTiles) {
-          adjTile.adjacentMines++;
-        }
-      }
-    } while (placed < this.mines);
-  }
-
-  checkTile(tile: TileComponent) {
-    if (!tile.flagged && !tile.revealed) {
-      this.revealTile(tile);
-    }
-  }
-
-  revealTile(tile: TileComponent) {
-    if (tile.revealed) { return };
-
-    tile.revealed = !tile.revealed;
-
-    if (tile.adjacentMines != 0 && !tile.isMine) { return };
-
-    const adjacentTiles = this.getAdjacentTiles(tile);
-
-    for (const adjTile of adjacentTiles) {
-        this.revealTile(adjTile);
-    }
-  }
-
+  /**
+   * Toggles flag on a unrevelaed tile, preventing future revealing
+   * @param tile - The tile to flag or unflag.
+   */
   flagTile(tile: TileComponent) {
     // cant flag revealed tiles
     if (tile.revealed) {
@@ -147,4 +157,84 @@ export class MineFieldComponent {
     // flag or unflag
     tile.flagged = !tile.flagged;
   }
+
+  /**
+   * Checks a tile's state and initiate revealing if not flagged or revealed already.
+   * @param tile - The tile to check and reveal if allowed.
+   */
+  checkTile(tile: TileComponent) {
+    // if not flagged or revealed, then reveal
+    if (tile.flagged || tile.revealed) { return }
+
+    this.revealTile(tile);
+
+    if (tile.isMine) {
+      tile.exploded = true;
+
+      this.endGame();
+    }
+  }
+
+  async endGame() {
+    // trip gameover flag
+    this.gameOver = true;
+
+    // reveal all and unflag
+    for (const tile of this.tiles) {
+      await this.delay(10); // small delay makes it look cooler
+      tile.revealed = true;
+      tile.flagged = false;
+    }
+
+    // not sure if I like this yet
+    // slowly explode other bombs 
+    for (const tile of this.tiles) {
+      if (tile.isMine) {
+        await this.delay(1500);
+        tile.exploded = true;
+      }
+    }
+  }
+
+  /**
+   * Asynchronous function to reveal a tile and its adjacent tiles if they are empty.
+   * Async allows for the delayed cascading effect
+   * @param tile - The tile to reveal.
+   */
+  async revealTile(tile: TileComponent) {
+    // can't reveal flagged or revealed tiles 
+    if (tile.revealed || tile.flagged) { return; }
+
+    tile.revealed = true;
+
+    if (tile.adjacentMines !== 0) {
+      return;
+    }
+
+    const adjacentTiles = this.getAdjacentTiles(tile);
+
+    // short time delay for cool cascade effect
+    await this.delay(100);
+
+    // check if neighbors need to be revealed
+    for (const adjTile of adjacentTiles) {
+      await this.revealTile(adjTile);
+    }
+  }
+
+  /**
+   * Creates a delay for a specified time using setTimeout.
+   * @param ms - The delay time in milliseconds.
+   * @returns A promise that resolves after the delay.
+   */
+  delay(ms: number): Promise<void> {
+    // Create and return a Promise that resolves after specified time
+    return new Promise<void>((resolve) => {
+      // setTimeout simulates delay, schedules the 'resolve' function to be called after 'ms' milliseconds.
+      setTimeout(resolve, ms);
+    });
+  }
+
+  
+
 }
