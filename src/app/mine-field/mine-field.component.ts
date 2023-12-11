@@ -26,6 +26,9 @@ export class MineFieldComponent {
 
   gameState: 'first' | 'game' | 'win' | 'lose' = 'first';
 
+  // Track if a check is in progress
+  private isChecking: boolean = false;
+
   constructor() {
     // intializer function temporarily
     this.setDifficulty(this.difficulty);
@@ -51,7 +54,7 @@ export class MineFieldComponent {
       case 'hard':
         this.x_cols = 10;
         this.y_rows = 10;
-        this.mines = 2;
+        this.mines = 10;
         break;
     }
 
@@ -164,8 +167,6 @@ export class MineFieldComponent {
 
     // flag or unflag
     tile.flagged = !tile.flagged;
-
-    this.checkWin();
   }
 
   /**
@@ -175,6 +176,9 @@ export class MineFieldComponent {
   async checkTile(tile: TileComponent) {
     if (this.gameState == 'lose' || this.gameState == 'win') return;
 
+    // Set the flag to indicate a check is in progress
+    this.isChecking = true;
+
     // first move loss prevention
     if (this.gameState == 'first') {
       // generate game on first click
@@ -183,7 +187,10 @@ export class MineFieldComponent {
     }
 
     // if not flagged or revealed, then reveal
-    if (tile.flagged || tile.revealed) { return }
+    if (tile.flagged || tile.revealed) {
+      this.isChecking = false;
+      return
+    }
 
     // actually reveal the tile, cascade if necessary
     const doneReveal = await this.revealTile(tile);
@@ -196,22 +203,21 @@ export class MineFieldComponent {
         this.revealAll();
         this.detonateAll();
         this.toggleOverlay();
+        this.isChecking = false;
         return;
       }
 
+      let unrevealedTiles = this.tiles.filter((t) => !t.revealed && !t.isMine);
+      let unexplodedMines = this.tiles.filter((t) => t.isMine && !t.exploded);
+
+      // dont check win condition until after reveal is done 
+      if (unrevealedTiles.length === 0 && unexplodedMines.length === this.mines) {
       // game over - you win ! :)
-      this.checkWin();
-    }
-  }
-
-  async checkWin() {
-    let unrevealedTiles = this.tiles.filter((t) => !t.revealed && !t.isMine);
-    let unexplodedMines = this.tiles.filter((t) => t.isMine && !t.exploded);
-
-    if (unrevealedTiles.length === 0 && unexplodedMines.length === this.mines) {
-      this.gameState = 'win';
-      this.revealAll();
-      this.toggleOverlay();
+        this.gameState = 'win';
+        this.revealAll();
+        this.toggleOverlay();
+        this.isChecking = false;
+      }
     }
   }
 
