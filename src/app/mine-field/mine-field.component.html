@@ -1,21 +1,32 @@
 <main>
     <div class="mine-field" [ngStyle]="{'--columns': x_cols, '--rows': y_rows}">
-        <app-tile 
-            class="tile"
-
-            *ngFor="let tile of this.tiles"
-
-            [revealed]="tile.revealed"
-            [isMine]="tile.isMine"
-            [exploded]="tile.exploded"
-            [flagged]="tile.flagged"
-            [adjacentMines]="tile.adjacentMines"
-            
-            [ngClass]="{'revealed-class': tile.revealed}"
-            
-            (click)="checkTile(tile)"
-            (contextmenu)="$event.preventDefault(); flagTile(tile)"
-        >
+        <app-tile class="tile" *ngFor="let tile of this.tiles" [revealed]="tile.revealed" [isMine]="tile.isMine"
+            [exploded]="tile.exploded" [flagged]="tile.flagged" [adjacentMines]="tile.adjacentMines"
+            [ngClass]="{'revealed-class': tile.revealed, 'flagged-class': tile.flagged}" (click)="checkTile(tile)"
+            (contextmenu)="$event.preventDefault(); flagTile(tile)">
         </app-tile>
+
+        <div class="overlay">
+            <span class="status">
+                <h3><b>Game Over</b></h3>
+                <p>You {{ this.gameState }}</p>
+            </span>
+
+            <span class="restart-wrapper">
+                <button>Restart</button>
+            </span>
+
+            <span class="change-diff">
+                <p>Change Difficulty:</p>
+                <div class="difficulties">
+                    <button (click)="setDifficulty('easy')">Easy</button>
+                    <button (click)="setDifficulty('medium')">Medium</button>
+                    <button (click)="setDifficulty('hard')">Hard</button>
+                </div>
+            </span>
+        </div>
     </div>
-</main> 
+    <!-- <div class="settings-wrapper">
+        <i class="fa-solid fa-gear"></i>
+    </div> -->
+</main>

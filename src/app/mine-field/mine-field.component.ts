@@ -23,7 +23,7 @@ export class MineFieldComponent {
   mines = 10; // # of mines in minefield
   
   firstMove = true;
-  gameOver = false;
+  gameState: 'win' | 'lose' | 'playing' = 'playing';
 
   constructor() {
     // intializer function temporarily
@@ -55,7 +55,7 @@ export class MineFieldComponent {
     }
 
     this.firstMove = true;
-    this.gameOver = false;
+    this.gameState = 'playing';
 
     this.generateTiles();
   }
@@ -190,7 +190,7 @@ export class MineFieldComponent {
 
   async endGame() {
     // trip gameover flag
-    this.gameOver = true;
+    // this.gameState = true;
 
     // reveal all and unflag
     for (const tile of this.tiles) {
