@@ -6,13 +6,13 @@
             (contextmenu)="$event.preventDefault(); flagTile(tile)">
         </app-tile>
 
-        <div class="overlay">
+        <div class="overlay" [ngClass]="{'overlay': true, 'visible': showOverlay, 'hidden': !showOverlay}">
             <span class="status">
                 <h3 *ngIf="gameState === 'first' || gameState === 'game'">Paused</h3>
                 <h3 *ngIf="gameState === 'win'">Congratulations!</h3>
                 <h3 *ngIf="gameState === 'lose'"><b>Game Over</b></h3>
                 <p *ngIf="gameState === 'win' || gameState === 'lose'">You {{ gameState }}</p>
-            </span>            
+            </span>
 
             <span class="restart-wrapper">
                 <button>Restart</button>
@@ -26,6 +26,9 @@
                     <button (click)="setDifficulty('hard')">Hard</button>
                 </div>
             </span>
+        </div>
+
+        <div (click)="toggleOverlay()" class="overlay-toggle-wrapper fa-solid fa-gear">
         </div>
     </div>
 </main>

@@ -21,6 +21,8 @@ export class MineFieldComponent {
   x_cols = 10; // width of minefield
   y_rows = 10; // height of minefield
   mines = 10; // # of mines in minefield
+
+  showOverlay = false;
   
   gameState: 'first' | 'game' | 'win' | 'lose' = 'first';
 
@@ -234,7 +236,6 @@ export class MineFieldComponent {
     }
   }
 
-
   /**
    * Creates a delay for a specified time using setTimeout.
    * @param ms - The delay time in milliseconds.
@@ -246,5 +247,9 @@ export class MineFieldComponent {
       // setTimeout simulates delay, schedules the 'resolve' function to be called after 'ms' milliseconds.
       setTimeout(resolve, ms);
     });
+  }
+
+  toggleOverlay() {
+    this.showOverlay = !this.showOverlay;
   }
 }
