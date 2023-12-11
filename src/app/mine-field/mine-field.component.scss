@@ -1,145 +1,186 @@
 main {
+    // size to full viewport
     height: 100vh;
-    margin: 0;
-    padding: 0;
+
+    // flexbox layout = simple horizontal and vertical centering
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-}
 
-.mine-field {
-    // inline grid displays better
-    display: inline-grid;
-    // necessary for overlay 
-    position: relative;
-    // variables let typescript define # of rows & cols
-    grid-template-columns: repeat(var(--columns), 1fr);
-    grid-template-rows: repeat(var(--rows), 1fr);
-    // size tiles dynamically 
-    width: min(60vw, 60vh);
-    aspect-ratio: 1;
+    // container for minefield tiles and overlay
+    .mine-field {
+        // inline grid displays tiles in nice parttern
+        display: inline-grid;
+        // necessary for overlay 
+        position: relative;
+        // variables let typescript define # of rows & cols
+        grid-template-columns: repeat(var(--columns), 1fr);
+        grid-template-rows: repeat(var(--rows), 1fr);
+        // size tiles dynamically 
+        width: min(70vw, 70vh); // 70% of view displays nice on all screens
+        aspect-ratio: 1;
+    
+        // the tiles that makeup the games minefield or board
+        app-tile {
+            // for proper child dom placement (abosulte pos children)
+            position: relative;
 
-    // gear icon to toggle overlay
-    .overlay-toggle-wrapper {
-        // Font and Icon Styles
-        font-family: "Font Awesome 6 Free";
-        content: "\f013";
-        font-weight: 900;
-        font-size: 1.75rem;
-        color: hsl(219 50% 45% / 1);
+            // Flexbox Display and Alignment
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-        // indicate clickable
-        cursor: pointer;
+            // tile styling
+            background-color: lavenderblush;
+            border: 1px dashed;
+        
+            // mines and such use svgs, padding needed to keep from edges
+            ::ng-deep svg {
+                padding: 20%;
+            }
+        
+            // revealed tile
+            &.revealed-class {
+                background-color: lavender;
+            }
+        
+            // tile cover pseudo elements 
+            &::before {
+                // Empty content acts as the tile cover
+                content: '';
 
-        // Positioning
-        position: absolute;
-        bottom: -2rem;
-        right: 0;
-    }
-}
+                // position and cover tile
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
 
-.overlay {
-    // Positioning 
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 69; // aboove everything
+                // color and round edges
+                background-color: cornflowerblue;
+                border-radius: 10%;
 
-    // Background and Text Styles 
-    background-color: hsla(0, 0%, 25%, 0.75);
-    color: white;
+                // animation 
+                transition: transform 0.420s ease;
+                
+                // ensure cover is above tile
+                z-index: 1;
+            }
+        
+            // trigger tile cover animation 
+            &.revealed-class::before {
+                transform: scale(0);
+            }
+        
+            // fa flag pseudo element 
+            &::after {
+                // font awesome flag 
+                content: "\f024";
+                font-family: "Font Awesome 6 Free";
+                font-weight: 900; // make flag solid
 
-    // Flexbox Layout 
-    display: flex;
-    align-items: center;
-    justify-content: space-evenly;
-    flex-direction: column;
-    // bit of a grid hack to ensure overlay is entire size of minefield
-    grid-row: 1/-1;
-    grid-column: 1/-1;
+                // alignment 
+                position: absolute;
 
-    user-select: none;
-
-    // visiblity toggle
-    height: 0;
-    overflow: hidden; 
-    transition: height 0.3s ease-in-out;    
-
-    &.visible {
-        height: 100%;
-    }
-
-    // overlay wrappers are all span
-    span {
-        width: 100%;
-        text-align: center;
-
-        &.status h3 {
-            font-size: 200%;
-            margin-bottom: 1rem;
+                // animation
+                transition: transform 0.42s cubic-bezier(0.69, -0.75, 0.5, 2.08);
+                transform: scale(0);
+                
+                // position above tile cover
+                z-index: 2;
+            }
+        
+            // trigger flag animation
+            &.flagged-class::after {
+                transform: scale(1);
+            }
         }
-
-        &.change-diff {
-            .difficulties {
-                margin: .5rem 0;
-
-                button:not(:first-of-type):not(:last-of-type) {
-                    margin: 0 1rem;
+    
+        // game pause, won, lost, overlay with options
+        .overlay {
+            // Positioning 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 69; // aboove everything
+        
+            // Background and Text Styles 
+            background-color: hsla(0, 0%, 25%, 0.75);
+            color: white;
+        
+            // Flexbox Layout 
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            flex-direction: column;
+            // bit of a grid hack to ensure overlay is entire size of minefield
+            grid-row: 1/-1;
+            grid-column: 1/-1;
+        
+            user-select: none;
+        
+            // visiblity toggle
+            height: 0;
+            overflow: hidden;
+            transition: height 0.3s ease-in-out;
+        
+            // toggle overlay animation
+            &.visible {
+                height: 100%;
+            }
+        
+            // overlay wrappers are all span
+            span {
+                // size and content align wrappers 
+                width: 100%;
+                text-align: center;
+        
+                // title text bigger
+                &.status h3 {
+                    font-size: 200%;
+                    margin-bottom: 1rem;
+                }
+        
+                &.change-diff {
+                    .difficulties {
+                        margin: .5rem 0;
+        
+                        button:not(:first-of-type):not(:last-of-type) {
+                            margin: 0 1rem;
+                        }
+                    }
                 }
             }
         }
-    }
-}
-
-app-tile {
-    position: relative;
-    background-color: lavenderblush;
-    border: 1px dashed;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    ::ng-deep svg {
-        padding: 20%;
-    }
-
-    &.revealed-class {
-        background-color: lavender;
-    }
-
-    // before tags act as the cover of the tiles
-    &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: cornflowerblue;
-        transition: transform 0.420s ease;
-        border-radius: 10%;
-        z-index: 1;
-    }
-
-    &.revealed-class::before {
-        transform: scale(0);
-    }
-
-    // after tags are used as the flags
-    &::after {
-        transform: scale(0);
-        font-family: "Font Awesome 6 Free";
-        content: "\f024";
-        position: absolute;
-        transition: transform 0.42s cubic-bezier(0.69, -0.75, 0.5, 2.08);
-        font-weight: 900;
-        z-index: 2;
-    }
-
-    &.flagged-class::after {
-        transform: scale(1);
+    
+        // gear icon to toggle overlay
+        .overlay-toggle-wrapper {
+            // Font and Icon Styles
+            font-family: "Font Awesome 6 Free";
+            content: "\f013";
+            font-weight: 900;
+            font-size: 1.75rem;
+            color: hsl(219 50% 45% / 1);
+    
+            // indicate clickable
+            cursor: pointer;
+    
+            // Positioning
+            position: absolute;
+            bottom: -2rem;
+            right: 0;
+    
+            // animation
+            transition: all 0.5s;
+            transform: rotate(0);
+    
+            // toggle animation for overlay gear icon toggle switch
+            &.rotate {
+                transform: rotate(180deg);
+            }
+        }
     }
 }

@@ -32,7 +32,7 @@
             </span>
         </div>
 
-        <div (click)="toggleOverlay()" class="overlay-toggle-wrapper fa-solid fa-gear">
+        <div (click)="toggleOverlay()" class="overlay-toggle-wrapper fa-solid fa-gear" [ngClass]="{'rotate': this.showOverlay}">
         </div>
     </div>
 </main>
