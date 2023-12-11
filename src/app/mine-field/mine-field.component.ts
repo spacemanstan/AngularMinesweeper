@@ -23,7 +23,7 @@ export class MineFieldComponent {
   mines = 10; // # of mines in minefield
 
   showOverlay = false;
-  
+
   gameState: 'first' | 'game' | 'win' | 'lose' = 'first';
 
   constructor() {
@@ -79,9 +79,9 @@ export class MineFieldComponent {
     let placed = 0;
     do {
       const randomIndex = Math.floor(Math.random() * this.tiles.length);
-      
-      if(randomIndex == startIndex) continue;
-      
+
+      if (randomIndex == startIndex) continue;
+
       const randomElement = this.tiles[randomIndex];
 
       if (!randomElement.isMine) {
@@ -154,6 +154,8 @@ export class MineFieldComponent {
    * @param tile - The tile to flag or unflag.
    */
   flagTile(tile: TileComponent) {
+    if(this.gameState == 'lose' || this.gameState == 'win') return;
+
     // cant flag revealed tiles
     if (tile.revealed) {
       tile.flagged = false;
@@ -169,7 +171,11 @@ export class MineFieldComponent {
    * @param tile - The tile to check and reveal if allowed.
    */
   checkTile(tile: TileComponent) {
-    if(this.gameState == 'first') {
+    if(this.gameState == 'lose' || this.gameState == 'win') return;
+
+    // first move loss prevention
+    if (this.gameState == 'first') {
+      // generate game on first click
       this.placeMines(tile.index);
       this.gameState = 'game';
     }
@@ -177,35 +183,48 @@ export class MineFieldComponent {
     // if not flagged or revealed, then reveal
     if (tile.flagged || tile.revealed) { return }
 
+    // actually reveal the tile, cascade if necessary
     this.revealTile(tile);
 
+    // game over - you lose ! :(
     if (tile.isMine) {
       tile.exploded = true;
+      this.gameState = 'lose'
+      this.revealAll();
+      this.detonateAll();
+      this.toggleOverlay();
+      return;
+    }
 
-      this.endGame();
+    // game over - you win ! :)
+    let unrevealedTiles = this.tiles.filter(
+      (t) => !t.revealed && !t.isMine
+    );
+
+    if (unrevealedTiles.length === 0) {
+      this.gameState = 'win'
+      this.revealAll();
+      this.toggleOverlay();
     }
   }
 
-  async endGame() {
+  async revealAll() {
     // reveal all and unflag
     for (const tile of this.tiles) {
       await this.delay(10); // small delay makes it look cooler
       tile.revealed = true;
       tile.flagged = false;
     }
+  }
 
-    // slowly explode other bombs 
-    let unexploded: TileComponent[] = [];
-
-    for (const tile of this.tiles) {
-      if (tile.isMine && !tile.exploded) {
-        unexploded.push(tile);
-      }
-    }
-
-    // randomize explode order
+  async detonateAll() {
+    // Filter out unexploded mine tiles
+    const unexploded = this.tiles.filter(tile => tile.isMine && !tile.exploded);
+  
+    // Randomize explode order
     fisherYatesShuffle(unexploded);
-
+  
+    // Explode unexploded mine tiles 1 by 1 with a delay
     for (const bomb of unexploded) {
       await this.delay(1500);
       bomb.exploded = true;
