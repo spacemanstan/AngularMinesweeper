@@ -8,9 +8,11 @@
 
         <div class="overlay">
             <span class="status">
-                <h3><b>Game Over</b></h3>
-                <p>You {{ this.gameState }}</p>
-            </span>
+                <h3 *ngIf="gameState === 'first' || gameState === 'game'">Paused</h3>
+                <h3 *ngIf="gameState === 'win'">Congratulations!</h3>
+                <h3 *ngIf="gameState === 'lose'"><b>Game Over</b></h3>
+                <p *ngIf="gameState === 'win' || gameState === 'lose'">You {{ gameState }}</p>
+            </span>            
 
             <span class="restart-wrapper">
                 <button>Restart</button>
@@ -26,7 +28,4 @@
             </span>
         </div>
     </div>
-    <!-- <div class="settings-wrapper">
-        <i class="fa-solid fa-gear"></i>
-    </div> -->
 </main>

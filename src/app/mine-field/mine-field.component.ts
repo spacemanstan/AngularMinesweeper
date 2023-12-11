@@ -22,8 +22,7 @@ export class MineFieldComponent {
   y_rows = 10; // height of minefield
   mines = 10; // # of mines in minefield
   
-  firstMove = true;
-  gameState: 'win' | 'lose' | 'playing' = 'playing';
+  gameState: 'first' | 'game' | 'win' | 'lose' = 'first';
 
   constructor() {
     // intializer function temporarily
@@ -53,9 +52,6 @@ export class MineFieldComponent {
         this.mines = 10;
         break;
     }
-
-    this.firstMove = true;
-    this.gameState = 'playing';
 
     this.generateTiles();
   }
@@ -171,9 +167,9 @@ export class MineFieldComponent {
    * @param tile - The tile to check and reveal if allowed.
    */
   checkTile(tile: TileComponent) {
-    if(this.firstMove) {
+    if(this.gameState == 'first') {
       this.placeMines(tile.index);
-      this.firstMove = false;
+      this.gameState = 'game';
     }
 
     // if not flagged or revealed, then reveal
@@ -189,9 +185,6 @@ export class MineFieldComponent {
   }
 
   async endGame() {
-    // trip gameover flag
-    // this.gameState = true;
-
     // reveal all and unflag
     for (const tile of this.tiles) {
       await this.delay(10); // small delay makes it look cooler
