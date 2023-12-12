@@ -58,17 +58,17 @@ export class MineFieldComponent {
       case 'easy':
         this.x_cols = 7;
         this.y_rows = 7;
-        this.mines = 3;
+        this.mines = 5;
         break;
       case 'medium':
         this.x_cols = 12;
         this.y_rows = 12;
-        this.mines = 20;
+        this.mines = 9;
         break;
       case 'hard':
         this.x_cols = 15;
         this.y_rows = 15;
-        this.mines = 1;
+        this.mines = 25;
         break;
     }
   }
