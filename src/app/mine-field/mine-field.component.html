@@ -1,21 +1,68 @@
 <main>
+    <div class="game-info">
+        <span class="dimensions">
+            <i class="fa-solid fa-bomb"></i> {{mines}}
+            <br />
+            <i class="fa-solid fa-border-all"></i> {{this.x_cols}} x {{this.y_rows}}
+        </span>
+        <span class="face">
+            <i *ngIf="gameState == 'first' || gameState == 'game'" class="fa-regular fa-face-smile"></i>
+            <i *ngIf="gameState == 'win'" class="fa-regular fa-face-kiss-wink-heart fa-bounce"></i>
+            <!-- <i class="fa-solid fa-skull"></i>    -->
+            <i *ngIf="gameState == 'lose'" class="fa-regular fa-face-dizzy"></i>
+        </span>
+        <span class="current-difficulty">
+            <br />
+            {{this.difficulty}}
+        </span>
+    </div>
+
     <div class="mine-field" [ngStyle]="{'--columns': x_cols, '--rows': y_rows}">
         <app-tile 
-            class="tile"
+            class="tile" 
+            *ngFor="let tile of this.tiles" 
 
-            *ngFor="let tile of this.tiles"
-
-            [revealed]="tile.revealed"
+            [revealed]="tile.revealed" 
             [isMine]="tile.isMine"
-            [exploded]="tile.exploded"
-            [flagged]="tile.flagged"
+            [flagged]="tile.flagged" 
             [adjacentMines]="tile.adjacentMines"
+            [tileSVG]="tile.tileSVG"
             
-            [ngClass]="{'revealed-class': tile.revealed}"
-            
+            [ngClass]="{'revealed-class': tile.revealed, 'flagged-class': tile.flagged}" 
+
             (click)="checkTile(tile)"
-            (contextmenu)="$event.preventDefault(); flagTile(tile)"
-        >
+            (contextmenu)="$event.preventDefault(); flagTile(tile)">
         </app-tile>
+
+        <div class="overlay" [ngClass]="{'overlay': true, 'visible': showOverlay, 'hidden': !showOverlay}">
+            <span class="status">
+                <h3 *ngIf="gameState === 'first' || gameState === 'game'">Paused</h3>
+                <h3 *ngIf="gameState === 'win'">Congratulations!</h3>
+                <h3 *ngIf="gameState === 'lose'"><b>Game Over</b></h3>
+                <p *ngIf="gameState === 'win' || gameState === 'lose'">You {{ gameState }}</p>
+            </span>
+
+            <span class="newgame-wrapper">
+                <button (click)="newGame()">New Game</button>
+            </span>
+
+            <span class="retry-wrapper">
+                <button (click)="retryGame()">Retry</button>
+
+            </span>
+
+            <span class="change-diff">
+                <p>Change Difficulty:</p>
+                <div class="difficulties">
+                    <button (click)="intializeGame('easy')">Easy</button>
+                    <button (click)="intializeGame('medium')">Medium</button>
+                    <button (click)="intializeGame('hard')">Hard</button>
+                </div>
+            </span>
+        </div>
+
+        <div (click)="toggleOverlay()" class="overlay-toggle-wrapper fa-solid fa-gear"
+            [ngClass]="{'rotate': this.showOverlay}">
+        </div>
     </div>
-</main> 
+</main>
