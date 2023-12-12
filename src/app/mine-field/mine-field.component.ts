@@ -1,7 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TileComponent } from '../tile/tile.component';
-// allowImportingTsExtensions must be enabled for this
 import { fisherYatesShuffle } from './shuffle';
 
 @Component({
@@ -13,7 +12,8 @@ import { fisherYatesShuffle } from './shuffle';
 })
 export class MineFieldComponent {
   // temporary difficulty selector
-  @Input() difficulty: 'easy' | 'medium' | 'hard' = 'hard';
+  @Input() difficulty: 'easy' | 'medium' | 'hard' = 'easy';
+  gameState: 'first' | 'game' | 'win' | 'lose' = 'first';
 
   x_cols = 10; // width of minefield
   y_rows = 10; // height of minefield
@@ -23,10 +23,9 @@ export class MineFieldComponent {
   tiles: TileComponent[] = [];
 
   showOverlay = false;
-  gameState: 'first' | 'game' | 'win' | 'lose' = 'first';
 
-  // Track if a check is in progress
-  private isChecking: boolean = false;
+  // async tracking
+  private revealIndicator: boolean = false;
 
   constructor() {
     // intializer function temporarily
@@ -37,6 +36,8 @@ export class MineFieldComponent {
    * Intialize the game
    */
   intializeGame(difficulty: any) {
+    // interrupt any potetial reveal effects
+    this.revealIndicator = false;
     this.showOverlay = false;
     this.gameState = 'first';
     this.difficulty = difficulty;
@@ -54,7 +55,7 @@ export class MineFieldComponent {
       case 'easy':
         this.x_cols = 7;
         this.y_rows = 7;
-        this.mines = 10;
+        this.mines = 3;
         break;
       case 'medium':
         this.x_cols = 12;
@@ -64,7 +65,7 @@ export class MineFieldComponent {
       case 'hard':
         this.x_cols = 15;
         this.y_rows = 15;
-        this.mines = 45;
+        this.mines = 1;
         break;
     }
   }
@@ -85,23 +86,33 @@ export class MineFieldComponent {
   }
 
   newGame() {
+    // stop reveal by setting flag; acts like an interrupt
+    this.revealIndicator = false;
+
+    // intialize new game of same difficulty
     this.intializeGame(this.difficulty);
   }
 
-  retryGame() {
+  async retryGame() {
+    // stop reveal by setting flag; acts like an interrupt
+    this.revealIndicator = false;
+
+    // wait for interrupt  
+    await this.delay(10);
+
     // hide overlay
     this.showOverlay = false;
     // skip first move generation check
     this.gameState = 'game';
 
-    for(const tile of this.tiles) {
+    for (const tile of this.tiles) {
       // hide everything again 
       tile.revealed = false;
       // unflag it
       tile.flagged = false;
-      
+
       // reset mines
-      if(tile.isMine) {
+      if (tile.isMine) {
         tile.exploded = false;
       }
     }
@@ -210,9 +221,6 @@ export class MineFieldComponent {
   async checkTile(tile: TileComponent) {
     if (this.gameState == 'lose' || this.gameState == 'win') return;
 
-    // Set the flag to indicate a check is in progress
-    this.isChecking = true;
-
     // first move loss prevention
     if (this.gameState == 'first') {
       // generate game on first click
@@ -222,45 +230,85 @@ export class MineFieldComponent {
 
     // if not flagged or revealed, then reveal
     if (tile.flagged || tile.revealed) {
-      this.isChecking = false;
       return
     }
 
-    // actually reveal the tile, cascade if necessary
-    const doneReveal = await this.revealTile(tile);
+    // interrupt any previous reveals just incase
+    this.revealIndicator = false;
 
-    if (doneReveal) {
-      // game over - you lose ! :(
-      if (tile.isMine) {
-        tile.exploded = true;
-        this.gameState = 'lose'
-        this.revealAll();
-        this.detonateAll();
-        this.toggleOverlay();
-        this.isChecking = false;
-        return;
-      }
+    this.revealIndicator = true;
+    await this.revealTile(tile);
+    this.revealIndicator = false;
 
-      let unrevealedTiles = this.tiles.filter((t) => !t.revealed && !t.isMine);
-      let unexplodedMines = this.tiles.filter((t) => t.isMine && !t.exploded);
+    // game over - you lose ! :(
+    if (tile.isMine) {
+      tile.exploded = true;
+      this.gameState = 'lose'
+      this.revealAll();
+      this.detonateAll();
+      this.toggleOverlay();
+      return;
+    }
 
-      // dont check win condition until after reveal is done 
-      if (unrevealedTiles.length === 0 && unexplodedMines.length === this.mines) {
-        // game over - you win ! :)
-        this.gameState = 'win';
-        this.revealAll();
-        this.toggleOverlay();
-        this.isChecking = false;
-      }
+    let unrevealedTiles = this.tiles.filter((t) => !t.revealed && !t.isMine);
+    let unexplodedMines = this.tiles.filter((t) => t.isMine && !t.exploded);
+
+    // dont check win condition until after reveal is done 
+    if (unrevealedTiles.length === 0 && unexplodedMines.length === this.mines) {
+      // game over - you win ! :)
+      this.gameState = 'win';
+      this.revealAll();
+      this.toggleOverlay();
     }
   }
 
+  /**
+   * Asynchronous function to reveal all tiles and unflag them.
+   * Stops revealing if the reveal process is interrupted.
+   * Interrupted by setting revealIndicator false
+   */
   async revealAll(): Promise<boolean> {
+    this.revealIndicator = true;
+
     // reveal all and unflag
     for (const tile of this.tiles) {
+      // check for interrupts and break loop 
+      if (!this.revealIndicator) break;
+
       await this.delay(10); // small delay makes it look cooler
       tile.revealed = true;
       tile.flagged = false;
+    }
+
+    this.revealIndicator = false;
+    return true; // completion indicator
+  }
+
+  /**
+ * Asynchronous function to reveal a tile and its adjacent tiles if they are empty.
+ * Async allows for the delayed cascading effect
+ * @param tile - The tile to reveal.
+ */
+  async revealTile(tile: TileComponent): Promise<boolean> {
+    if (tile.revealed || tile.flagged) {
+      return true; // completion indicator
+    }
+
+    tile.revealed = true;
+
+    if (tile.adjacentMines === 0) {
+      const adjacentTiles = this.getAdjacentTiles(tile);
+
+      // short time delay for cascade reveal effect
+      await this.delay(100);
+
+      // Revealing adjacent tiles asynchronously using Promise.all
+      await Promise.all(adjacentTiles.map(async (adjTile) => {
+        // Check for interrupts before continuing the reveal process
+        if (!this.revealIndicator) return;
+
+        await this.revealTile(adjTile);
+      }));
     }
 
     return true; // completion indicator
@@ -277,34 +325,6 @@ export class MineFieldComponent {
     for (const bomb of unexploded) {
       await this.delay(1500);
       bomb.exploded = true;
-    }
-
-    return true; // completion indicator
-  }
-
-  /**
-   * Asynchronous function to reveal a tile and its adjacent tiles if they are empty.
-   * Async allows for the delayed cascading effect
-   * @param tile - The tile to reveal.
-   */
-  async revealTile(tile: TileComponent): Promise<boolean> {
-    if (tile.revealed || tile.flagged) {
-      return true; // completion indicator
-    }
-
-    tile.revealed = true;
-
-    if (tile.adjacentMines === 0) {
-      const adjacentTiles = this.getAdjacentTiles(tile);
-
-      // short time delay for cascade reveal effect
-      await this.delay(100);
-
-      // Revealing adjacent tiles asynchronously using Promise.all
-      await Promise.all(adjacentTiles.map(async (adjTile) => {
-        // await this.delay(100);
-        await this.revealTile(adjTile);
-      }));
     }
 
     return true; // completion indicator
