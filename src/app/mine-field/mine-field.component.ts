@@ -26,6 +26,7 @@ export class MineFieldComponent {
 
   // async tracking
   private revealIndicator: boolean = false;
+  private checkIndicator: boolean = false;
 
   constructor() {
     // intializer function temporarily
@@ -219,7 +220,17 @@ export class MineFieldComponent {
    * @param tile - The tile to check and reveal if allowed.
    */
   async checkTile(tile: TileComponent) {
-    if (this.gameState == 'lose' || this.gameState == 'win') return;
+    // prevent multiple checkTile runs at once
+    if(this.checkIndicator) return;
+
+    // game over means nothing to check
+    if (this.gameState == 'lose' || this.gameState == 'win') {
+      this.checkIndicator = false;
+      return;
+    }
+
+    // signal check in progress
+    this.checkIndicator = true;
 
     // first move loss prevention
     if (this.gameState == 'first') {
@@ -230,6 +241,7 @@ export class MineFieldComponent {
 
     // if not flagged or revealed, then reveal
     if (tile.flagged || tile.revealed) {
+      this.checkIndicator = false; // update indicator b4 exit
       return
     }
 
@@ -247,6 +259,7 @@ export class MineFieldComponent {
       this.revealAll();
       this.detonateAll();
       this.toggleOverlay();
+      this.checkIndicator = false; // update indicator b4 exit
       return;
     }
 
@@ -259,7 +272,11 @@ export class MineFieldComponent {
       this.gameState = 'win';
       this.revealAll();
       this.toggleOverlay();
+
+      this.checkIndicator = false; // update indicator b4 exit
     }
+
+    this.checkIndicator = false; // update indicator b4 exit
   }
 
   /**
