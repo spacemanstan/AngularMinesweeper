@@ -1,4 +1,22 @@
 <main>
+    <div class="game-info">
+        <span class="dimensions">
+            <i class="fa-solid fa-bomb"></i> {{mines}}
+            <br />
+            <i class="fa-solid fa-border-all"></i> {{this.x_cols}} x {{this.y_rows}}
+        </span>
+        <span class="face">
+            <i *ngIf="gameState == 'first' || gameState == 'game'" class="fa-regular fa-face-smile"></i>
+            <i *ngIf="gameState == 'win'" class="fa-regular fa-face-kiss-wink-heart"></i>
+            <!-- <i class="fa-solid fa-skull"></i>    -->
+            <i *ngIf="gameState == 'lose'" class="fa-regular fa-face-dizzy"></i>
+        </span>
+        <span class="current-difficulty">
+            <br />
+            {{this.difficulty}}
+        </span>
+    </div>
+
     <div class="mine-field" [ngStyle]="{'--columns': x_cols, '--rows': y_rows}">
         <app-tile class="tile" *ngFor="let tile of this.tiles" [revealed]="tile.revealed" [isMine]="tile.isMine"
             [exploded]="tile.exploded" [flagged]="tile.flagged" [adjacentMines]="tile.adjacentMines"
@@ -14,25 +32,27 @@
                 <p *ngIf="gameState === 'win' || gameState === 'lose'">You {{ gameState }}</p>
             </span>
 
-            <span class="restart-wrapper">
-                <button>Restart</button>
+            <span class="newgame-wrapper">
+                <button (click)="newGame()">New Game</button>
             </span>
 
-            <span class="replay-wrapper">
-                <button>Replay</button>
+            <span class="retry-wrapper">
+                <button (click)="retryGame()">Retry</button>
+
             </span>
 
             <span class="change-diff">
                 <p>Change Difficulty:</p>
                 <div class="difficulties">
-                    <button (click)="setDifficulty('easy')">Easy</button>
-                    <button (click)="setDifficulty('medium')">Medium</button>
-                    <button (click)="setDifficulty('hard')">Hard</button>
+                    <button (click)="intializeGame('easy')">Easy</button>
+                    <button (click)="intializeGame('medium')">Medium</button>
+                    <button (click)="intializeGame('hard')">Hard</button>
                 </div>
             </span>
         </div>
 
-        <div (click)="toggleOverlay()" class="overlay-toggle-wrapper fa-solid fa-gear" [ngClass]="{'rotate': this.showOverlay}">
+        <div (click)="toggleOverlay()" class="overlay-toggle-wrapper fa-solid fa-gear"
+            [ngClass]="{'rotate': this.showOverlay}">
         </div>
     </div>
 </main>

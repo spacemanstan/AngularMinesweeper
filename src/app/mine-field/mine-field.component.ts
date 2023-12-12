@@ -12,9 +12,6 @@ import { fisherYatesShuffle } from './shuffle';
   styleUrl: './mine-field.component.scss'
 })
 export class MineFieldComponent {
-  // tiles are stored as 1D array but rendered into 2D grid 
-  tiles: TileComponent[] = [];
-
   // temporary difficulty selector
   @Input() difficulty: 'easy' | 'medium' | 'hard' = 'hard';
 
@@ -22,8 +19,10 @@ export class MineFieldComponent {
   y_rows = 10; // height of minefield
   mines = 10; // # of mines in minefield
 
-  showOverlay = false;
+  // tiles are stored as 1D array but rendered into 2D grid 
+  tiles: TileComponent[] = [];
 
+  showOverlay = false;
   gameState: 'first' | 'game' | 'win' | 'lose' = 'first';
 
   // Track if a check is in progress
@@ -31,7 +30,18 @@ export class MineFieldComponent {
 
   constructor() {
     // intializer function temporarily
+    this.intializeGame(this.difficulty);
+  }
+
+  /**
+   * Intialize the game
+   */
+  intializeGame(difficulty: any) {
+    this.showOverlay = false;
+    this.gameState = 'first';
+    this.difficulty = difficulty;
     this.setDifficulty(this.difficulty);
+    this.generateTiles();
   }
 
   /**
@@ -42,34 +52,58 @@ export class MineFieldComponent {
   setDifficulty(difficulty: any): void {
     switch (difficulty) {
       case 'easy':
-        this.x_cols = 6;
-        this.y_rows = 6;
-        this.mines = 3;
-        break;
-      case 'medium':
         this.x_cols = 7;
         this.y_rows = 7;
-        this.mines = 7;
-        break;
-      case 'hard':
-        this.x_cols = 10;
-        this.y_rows = 10;
         this.mines = 10;
         break;
+      case 'medium':
+        this.x_cols = 12;
+        this.y_rows = 12;
+        this.mines = 20;
+        break;
+      case 'hard':
+        this.x_cols = 15;
+        this.y_rows = 15;
+        this.mines = 45;
+        break;
     }
-
-    this.generateTiles();
   }
 
   /**
    * Generates the tiles for the minefield with random mine placement.
    */
   generateTiles(): void {
+    // reset array 
+    this.tiles = [];
+
     // intialize array with default tilecomponents, html passes default values as inputs
     for (let tileIndex = 0; tileIndex < this.x_cols * this.y_rows; ++tileIndex) {
       const tile = new TileComponent(); // create new tile
       tile.setIndex(tileIndex); // tiles know their position for easier code later
       this.tiles[tileIndex] = tile; // set index to new tile
+    }
+  }
+
+  newGame() {
+    this.intializeGame(this.difficulty);
+  }
+
+  retryGame() {
+    // hide overlay
+    this.showOverlay = false;
+    // skip first move generation check
+    this.gameState = 'game';
+
+    for(const tile of this.tiles) {
+      // hide everything again 
+      tile.revealed = false;
+      // unflag it
+      tile.flagged = false;
+      
+      // reset mines
+      if(tile.isMine) {
+        tile.exploded = false;
+      }
     }
   }
 
@@ -212,7 +246,7 @@ export class MineFieldComponent {
 
       // dont check win condition until after reveal is done 
       if (unrevealedTiles.length === 0 && unexplodedMines.length === this.mines) {
-      // game over - you win ! :)
+        // game over - you win ! :)
         this.gameState = 'win';
         this.revealAll();
         this.toggleOverlay();

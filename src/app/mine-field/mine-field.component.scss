@@ -8,6 +8,17 @@ main {
     align-items: center;
     justify-content: center;
 
+    .game-info {
+        display: flex;
+        width: min(65vw, 65vh);
+        justify-content: space-between;
+
+        // scale face up
+        .face {
+            font-size: 2rem;
+        }
+    }
+
     // container for minefield tiles and overlay
     .mine-field {
         // inline grid displays tiles in nice parttern
@@ -20,7 +31,7 @@ main {
         // size tiles dynamically 
         width: min(70vw, 70vh); // 70% of view displays nice on all screens
         aspect-ratio: 1;
-    
+
         // the tiles that makeup the games minefield or board
         app-tile {
             // for proper child dom placement (abosulte pos children)
@@ -34,17 +45,17 @@ main {
             // tile styling
             background-color: lavenderblush;
             border: 1px dashed;
-        
+
             // mines and such use svgs, padding needed to keep from edges
             ::ng-deep svg {
                 padding: 20%;
             }
-        
+
             // revealed tile
             &.revealed-class {
                 background-color: lavender;
             }
-        
+
             // tile cover pseudo elements 
             &::before {
                 // Empty content acts as the tile cover
@@ -63,16 +74,16 @@ main {
 
                 // animation 
                 transition: transform 0.420s ease;
-                
+
                 // ensure cover is above tile
                 z-index: 1;
             }
-        
+
             // trigger tile cover animation 
             &.revealed-class::before {
                 transform: scale(0);
             }
-        
+
             // fa flag pseudo element 
             &::after {
                 // font awesome flag 
@@ -86,17 +97,17 @@ main {
                 // animation
                 transition: transform 0.42s cubic-bezier(0.69, -0.75, 0.5, 2.08);
                 transform: scale(0);
-                
+
                 // position above tile cover
                 z-index: 2;
             }
-        
+
             // trigger flag animation
             &.flagged-class::after {
                 transform: scale(1);
             }
         }
-    
+
         // game pause, won, lost, overlay with options
         .overlay {
             // Positioning 
@@ -106,11 +117,11 @@ main {
             width: 100%;
             height: 100%;
             z-index: 69; // aboove everything
-        
+
             // Background and Text Styles 
             background-color: hsla(0, 0%, 25%, 0.75);
             color: white;
-        
+
             // Flexbox Layout 
             display: flex;
             align-items: center;
@@ -119,35 +130,53 @@ main {
             // bit of a grid hack to ensure overlay is entire size of minefield
             grid-row: 1/-1;
             grid-column: 1/-1;
-        
+
             user-select: none;
-        
+
             // visiblity toggle
             height: 0;
             overflow: hidden;
             transition: height 0.3s ease-in-out;
-        
+
             // toggle overlay animation
             &.visible {
                 height: 100%;
             }
-        
+
+            button {
+                color: white;
+                text-shadow: 0.1rem 0.1rem 0.1rem black;
+                padding: 1rem;
+                border-radius: 1rem;
+                background: linear-gradient(-45deg, midnightblue, cornflowerblue, royalblue, darkblue);
+                background-size: 400% 400%;
+                animation: gradient 15s ease infinite;
+                font-weight: normal;
+                width: auto;
+            }
+
+            button:hover {
+                text-decoration: underline;
+                text-underline-offset: 0.1rem;
+                font-weight: bold;
+            }
+
             // overlay wrappers are all span
             span {
                 // size and content align wrappers 
                 width: 100%;
                 text-align: center;
-        
+
                 // title text bigger
                 &.status h3 {
                     font-size: 200%;
                     margin-bottom: 1rem;
                 }
-        
+
                 &.change-diff {
                     .difficulties {
                         margin: .5rem 0;
-        
+
                         button:not(:first-of-type):not(:last-of-type) {
                             margin: 0 1rem;
                         }
@@ -155,7 +184,7 @@ main {
                 }
             }
         }
-    
+
         // gear icon to toggle overlay
         .overlay-toggle-wrapper {
             // Font and Icon Styles
@@ -164,23 +193,37 @@ main {
             font-weight: 900;
             font-size: 1.75rem;
             color: hsl(219 50% 45% / 1);
-    
+
             // indicate clickable
             cursor: pointer;
-    
+
             // Positioning
             position: absolute;
             bottom: -2rem;
             right: 0;
-    
+
             // animation
             transition: all 0.5s;
             transform: rotate(0);
-    
+
             // toggle animation for overlay gear icon toggle switch
             &.rotate {
                 transform: rotate(180deg);
             }
         }
+    }
+}
+
+@keyframes gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
     }
 }
