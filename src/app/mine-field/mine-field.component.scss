@@ -9,13 +9,21 @@ main {
     justify-content: center;
 
     .game-info {
-        display: flex;
         width: min(65vw, 65vh);
-        justify-content: space-between;
+        position: relative;
+        text-align: center;
 
         // scale face up
         .face {
             font-size: 2rem;
+        }
+
+        .dimensions {
+            float: left;
+        }
+
+        .current-difficulty {
+            float: right;
         }
     }
 
