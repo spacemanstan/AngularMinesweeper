@@ -16,6 +16,10 @@ main {
         // scale face up
         .face {
             font-size: 2rem;
+            // alignment to center horizontally
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .dimensions {
@@ -24,6 +28,10 @@ main {
 
         .current-difficulty {
             float: right;
+        }
+
+        @media (max-width: 450px) {
+            width: min(85vw, 85vh);
         }
     }
 
@@ -191,6 +199,31 @@ main {
                     }
                 }
             }
+
+            @media (max-width: 450px) {
+                button {
+                    padding: 0.25rem;
+                }
+
+                span {
+
+                    // title text bigger
+                    &.status h3 {
+                        font-size: 80%;
+                        margin-bottom: 0.5rem;
+                    }
+
+                    &.change-diff {
+                        .difficulties {
+                            margin: .25rem 0;
+
+                            button:not(:first-of-type):not(:last-of-type) {
+                                margin: 0;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // gear icon to toggle overlay
@@ -218,6 +251,10 @@ main {
             &.rotate {
                 transform: rotate(180deg);
             }
+        }
+
+        @media (max-width: 450px) {
+            width: min(95vw, 95vh);
         }
     }
 }
