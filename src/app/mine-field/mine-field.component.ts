@@ -1,7 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TileComponent } from '../tile/tile.component';
-// allowImportingTsExtensions must be enabled for this
 import { fisherYatesShuffle } from './shuffle';
 
 @Component({
@@ -12,21 +11,41 @@ import { fisherYatesShuffle } from './shuffle';
   styleUrl: './mine-field.component.scss'
 })
 export class MineFieldComponent {
-  // tiles are stored as 1D array but rendered into 2D grid 
-  tiles: TileComponent[] = [];
-
   // temporary difficulty selector
-  @Input() difficulty: 'easy' | 'medium' | 'hard' = 'hard';
+  @Input() difficulty: 'easy' | 'medium' | 'hard' = 'easy';
+  gameState: 'first' | 'game' | 'win' | 'lose' = 'first';
 
   x_cols = 10; // width of minefield
   y_rows = 10; // height of minefield
   mines = 10; // # of mines in minefield
-  spawnIndex = -1 // track first click index, prevent gameover on first click
-  gameOver = false;
+
+  // tiles are stored as 1D array but rendered into 2D grid 
+  tiles: TileComponent[] = [];
+
+  showOverlay = false;
+
+  // async tracking
+  private revealIndicator: boolean = false;
+  private checkIndicator: boolean = false;
+  private endEffectIndicator: boolean = false;
 
   constructor() {
     // intializer function temporarily
+    this.intializeGame(this.difficulty);
+  }
+
+  /**
+   * Intialize the game
+   */
+  intializeGame(difficulty: any) {
+    // interrupt any potetial reveal effects
+    this.revealIndicator = false;
+    this.endEffectIndicator = false;
+    this.showOverlay = false;
+    this.gameState = 'first';
+    this.difficulty = difficulty;
     this.setDifficulty(this.difficulty);
+    this.generateTiles();
   }
 
   /**
@@ -37,31 +56,29 @@ export class MineFieldComponent {
   setDifficulty(difficulty: any): void {
     switch (difficulty) {
       case 'easy':
-        this.x_cols = 6;
-        this.y_rows = 6;
+        this.x_cols = 7;
+        this.y_rows = 7;
         this.mines = 3;
         break;
       case 'medium':
-        this.x_cols = 7;
-        this.y_rows = 7;
-        this.mines = 7;
+        this.x_cols = 12;
+        this.y_rows = 12;
+        this.mines = 20;
         break;
       case 'hard':
-        this.x_cols = 10;
-        this.y_rows = 10;
-        this.mines = 10;
+        this.x_cols = 15;
+        this.y_rows = 15;
+        this.mines = 1;
         break;
     }
-
-    this.generateTiles();
   }
 
   /**
    * Generates the tiles for the minefield with random mine placement.
    */
   generateTiles(): void {
-    // set or rest gameover flag
-    this.gameOver = false;
+    // reset array 
+    this.tiles = [];
 
     // intialize array with default tilecomponents, html passes default values as inputs
     for (let tileIndex = 0; tileIndex < this.x_cols * this.y_rows; ++tileIndex) {
@@ -69,15 +86,60 @@ export class MineFieldComponent {
       tile.setIndex(tileIndex); // tiles know their position for easier code later
       this.tiles[tileIndex] = tile; // set index to new tile
     }
+  }
 
+  newGame() {
+    // stop reveal by setting flag; acts like an interrupt
+    this.revealIndicator = false;
+    this.endEffectIndicator = false;
+
+    // intialize new game of same difficulty
+    this.intializeGame(this.difficulty);
+  }
+
+  async retryGame() {
+    // stop reveal by setting flag; acts like an interrupt
+    this.revealIndicator = false;
+    this.endEffectIndicator = false;
+
+    // wait for interrupt  
+    await this.delay(10);
+
+    // hide overlay
+    this.showOverlay = false;
+    // skip first move generation check
+    this.gameState = 'game';
+
+    for (const tile of this.tiles) {
+      // hide everything again 
+      tile.revealed = false;
+      // unflag it
+      tile.flagged = false;
+
+      // reset mines
+      if (tile.isMine) {
+        tile.tileSVG = 'bomb';
+      }
+    }
+  }
+
+  /**
+   * random mine placement.
+   * @param startIndex - index of first tile clicked to prevent first click game over
+   */
+  placeMines(startIndex: number): void {
     // greedy algorithm, randomly try to place mines until all are placed
     let placed = 0;
     do {
       const randomIndex = Math.floor(Math.random() * this.tiles.length);
+
+      if (randomIndex == startIndex) continue;
+
       const randomElement = this.tiles[randomIndex];
 
       if (!randomElement.isMine) {
         randomElement.isMine = true; // place mine
+        randomElement.tileSVG = 'bomb'; // update SVG
         ++placed; // update counter
 
         // inform neighbours
@@ -138,8 +200,6 @@ export class MineFieldComponent {
       adjacentTiles.push(this.tiles[tileIndex + this.y_rows + 1]);
     }
 
-    fisherYatesShuffle(adjacentTiles);
-
     return adjacentTiles;
   }
 
@@ -148,6 +208,8 @@ export class MineFieldComponent {
    * @param tile - The tile to flag or unflag.
    */
   flagTile(tile: TileComponent) {
+    if (this.gameState == 'lose' || this.gameState == 'win') return;
+
     // cant flag revealed tiles
     if (tile.revealed) {
       tile.flagged = false;
@@ -162,64 +224,162 @@ export class MineFieldComponent {
    * Checks a tile's state and initiate revealing if not flagged or revealed already.
    * @param tile - The tile to check and reveal if allowed.
    */
-  checkTile(tile: TileComponent) {
-    // if not flagged or revealed, then reveal
-    if (tile.flagged || tile.revealed) { return }
+  async checkTile(tile: TileComponent) {
+    // prevent multiple checkTile runs at once
+    if (this.checkIndicator) return;
 
-    this.revealTile(tile);
-
-    if (tile.isMine) {
-      tile.exploded = true;
-
-      this.endGame();
+    // game over means nothing to check
+    if (this.gameState == 'lose' || this.gameState == 'win') {
+      this.checkIndicator = false;
+      return;
     }
+
+    // signal check in progress
+    this.checkIndicator = true;
+
+    // first move loss prevention
+    if (this.gameState == 'first') {
+      // generate game on first click
+      this.placeMines(tile.index);
+      this.gameState = 'game';
+    }
+
+    // if not flagged or revealed, then reveal
+    if (tile.flagged || tile.revealed) {
+      this.checkIndicator = false; // update indicator b4 exit
+      return;
+    }
+
+    // interrupt any previous reveals just incase
+    this.revealIndicator = false;
+
+    this.revealIndicator = true;
+    await this.revealTile(tile);
+    this.revealIndicator = false;
+
+    // check lose and win conditions 
+    if (tile.isMine) {
+      // game over - you lose ! :(
+      tile.tileSVG = 'boom';
+      this.gameState = 'lose';
+    } else {
+      let unrevealedTiles = this.tiles.filter((t) => !t.revealed && !t.isMine);
+      let unexplodedMines = this.tiles.filter((t) => t.isMine && !t.revealed);
+
+      if (unrevealedTiles.length === 0 && unexplodedMines.length === this.mines) {
+        // game over - you win ! :)
+        this.gameState = 'win';
+      }
+    }
+
+    if (this.gameState == 'win' || this.gameState == 'lose') {
+      this.revealAll();
+      this.toggleOverlay();
+      this.endGameEffect();
+    }
+
+    this.checkIndicator = false; // update indicator b4 exit
   }
 
-  async endGame() {
-    // trip gameover flag
-    this.gameOver = true;
+  /**
+   * Asynchronous function to reveal all tiles and unflag them.
+   * Stops revealing if the reveal process is interrupted.
+   * Interrupted by setting revealIndicator false
+   */
+  async revealAll(): Promise<boolean> {
+    this.revealIndicator = true;
 
     // reveal all and unflag
     for (const tile of this.tiles) {
+      // check for interrupts and break loop 
+      if (!this.revealIndicator) break;
+
       await this.delay(10); // small delay makes it look cooler
       tile.revealed = true;
       tile.flagged = false;
     }
 
-    // not sure if I like this yet
-    // slowly explode other bombs 
-    for (const tile of this.tiles) {
-      if (tile.isMine) {
-        await this.delay(1500);
-        tile.exploded = true;
-      }
-    }
+    this.revealIndicator = false;
+    return true; // completion indicator
   }
 
   /**
-   * Asynchronous function to reveal a tile and its adjacent tiles if they are empty.
-   * Async allows for the delayed cascading effect
-   * @param tile - The tile to reveal.
-   */
-  async revealTile(tile: TileComponent) {
-    // can't reveal flagged or revealed tiles 
-    if (tile.revealed || tile.flagged) { return; }
+ * Asynchronous function to reveal a tile and its adjacent tiles if they are empty.
+ * Async allows for the delayed cascading effect
+ * @param tile - The tile to reveal.
+ */
+  async revealTile(tile: TileComponent): Promise<boolean> {
+    if (tile.revealed || tile.flagged) {
+      return true; // completion indicator
+    }
 
     tile.revealed = true;
 
-    if (tile.adjacentMines !== 0) {
-      return;
+    if (tile.adjacentMines === 0) {
+      const adjacentTiles = this.getAdjacentTiles(tile);
+
+      // short time delay for cascade reveal effect
+      await this.delay(100);
+
+      // Revealing adjacent tiles asynchronously using Promise.all
+      await Promise.all(adjacentTiles.map(async (adjTile) => {
+        // Check for interrupts before continuing the reveal process
+        if (!this.revealIndicator) return;
+
+        await this.revealTile(adjTile);
+      }));
     }
 
-    const adjacentTiles = this.getAdjacentTiles(tile);
+    return true; // completion indicator
+  }
 
-    // short time delay for cool cascade effect
-    await this.delay(100);
+  async endGameEffect(): Promise<boolean> {
+    // prevent end game effect collision, if even possible
+    if (this.endEffectIndicator) return true;
 
-    // check if neighbors need to be revealed
-    for (const adjTile of adjacentTiles) {
-      await this.revealTile(adjTile);
+    this.endEffectIndicator = true;
+
+    // on lose, blow up mines
+    if (this.gameState == 'lose') {
+      // Filter out unexploded mine tiles
+      const unexploded = this.tiles.filter(tile => tile.isMine && tile.tileSVG != 'boom');
+
+      // Randomize explode order
+      fisherYatesShuffle(unexploded);
+
+      // Explode unexploded mine tiles 1 by 1 with a delay
+      for (const bomb of unexploded) {
+        if (!this.endEffectIndicator) break;
+
+        await this.delay(1500);
+        bomb.tileSVG = 'boom';
+      }
     }
+
+    // on win, convert everything to peace signs or hearts 
+    if (this.gameState == 'win') {
+      // Filter out unexploded mine tiles
+      const bombs = this.tiles.filter(tile => tile.isMine);
+
+      // ensure all bombs are bombs
+      bombs.forEach((bomb) => bomb.tileSVG = 'bomb');
+
+      // Randomize explode order
+      fisherYatesShuffle(bombs);
+
+      // Explode unexploded mine tiles 1 by 1 with a delay
+      for (const bomb of bombs) {
+        if (!this.endEffectIndicator) break;
+
+        await this.delay(500);
+        bomb.tileSVG = 'win';
+      }
+    }
+
+    // unflag indicator 
+    this.endEffectIndicator = false;
+
+    return true; // completion indicator
   }
 
   /**
@@ -235,6 +395,7 @@ export class MineFieldComponent {
     });
   }
 
-  
-
+  toggleOverlay() {
+    this.showOverlay = !this.showOverlay;
+  }
 }
