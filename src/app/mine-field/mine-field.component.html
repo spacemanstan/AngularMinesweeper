@@ -7,7 +7,7 @@
         </span>
         <span class="face">
             <i *ngIf="gameState == 'first' || gameState == 'game'" class="fa-regular fa-face-smile"></i>
-            <i *ngIf="gameState == 'win'" class="fa-regular fa-face-kiss-wink-heart"></i>
+            <i *ngIf="gameState == 'win'" class="fa-regular fa-face-kiss-wink-heart fa-bounce"></i>
             <!-- <i class="fa-solid fa-skull"></i>    -->
             <i *ngIf="gameState == 'lose'" class="fa-regular fa-face-dizzy"></i>
         </span>
@@ -18,9 +18,19 @@
     </div>
 
     <div class="mine-field" [ngStyle]="{'--columns': x_cols, '--rows': y_rows}">
-        <app-tile class="tile" *ngFor="let tile of this.tiles" [revealed]="tile.revealed" [isMine]="tile.isMine"
-            [exploded]="tile.exploded" [flagged]="tile.flagged" [adjacentMines]="tile.adjacentMines"
-            [ngClass]="{'revealed-class': tile.revealed, 'flagged-class': tile.flagged}" (click)="checkTile(tile)"
+        <app-tile 
+            class="tile" 
+            *ngFor="let tile of this.tiles" 
+
+            [revealed]="tile.revealed" 
+            [isMine]="tile.isMine"
+            [flagged]="tile.flagged" 
+            [adjacentMines]="tile.adjacentMines"
+            [tileSVG]="tile.tileSVG"
+            
+            [ngClass]="{'revealed-class': tile.revealed, 'flagged-class': tile.flagged}" 
+
+            (click)="checkTile(tile)"
             (contextmenu)="$event.preventDefault(); flagTile(tile)">
         </app-tile>
 

@@ -27,6 +27,7 @@ export class MineFieldComponent {
   // async tracking
   private revealIndicator: boolean = false;
   private checkIndicator: boolean = false;
+  private endEffectIndicator: boolean = false;
 
   constructor() {
     // intializer function temporarily
@@ -39,6 +40,7 @@ export class MineFieldComponent {
   intializeGame(difficulty: any) {
     // interrupt any potetial reveal effects
     this.revealIndicator = false;
+    this.endEffectIndicator = false;
     this.showOverlay = false;
     this.gameState = 'first';
     this.difficulty = difficulty;
@@ -89,6 +91,7 @@ export class MineFieldComponent {
   newGame() {
     // stop reveal by setting flag; acts like an interrupt
     this.revealIndicator = false;
+    this.endEffectIndicator = false;
 
     // intialize new game of same difficulty
     this.intializeGame(this.difficulty);
@@ -97,6 +100,7 @@ export class MineFieldComponent {
   async retryGame() {
     // stop reveal by setting flag; acts like an interrupt
     this.revealIndicator = false;
+    this.endEffectIndicator = false;
 
     // wait for interrupt  
     await this.delay(10);
@@ -114,7 +118,7 @@ export class MineFieldComponent {
 
       // reset mines
       if (tile.isMine) {
-        tile.exploded = false;
+        tile.tileSVG = 'bomb';
       }
     }
   }
@@ -135,6 +139,7 @@ export class MineFieldComponent {
 
       if (!randomElement.isMine) {
         randomElement.isMine = true; // place mine
+        randomElement.tileSVG = 'bomb'; // update SVG
         ++placed; // update counter
 
         // inform neighbours
@@ -221,7 +226,7 @@ export class MineFieldComponent {
    */
   async checkTile(tile: TileComponent) {
     // prevent multiple checkTile runs at once
-    if(this.checkIndicator) return;
+    if (this.checkIndicator) return;
 
     // game over means nothing to check
     if (this.gameState == 'lose' || this.gameState == 'win') {
@@ -242,7 +247,7 @@ export class MineFieldComponent {
     // if not flagged or revealed, then reveal
     if (tile.flagged || tile.revealed) {
       this.checkIndicator = false; // update indicator b4 exit
-      return
+      return;
     }
 
     // interrupt any previous reveals just incase
@@ -252,28 +257,25 @@ export class MineFieldComponent {
     await this.revealTile(tile);
     this.revealIndicator = false;
 
-    // game over - you lose ! :(
+    // check lose and win conditions 
     if (tile.isMine) {
-      tile.exploded = true;
-      this.gameState = 'lose'
-      this.revealAll();
-      this.detonateAll();
-      this.toggleOverlay();
-      this.checkIndicator = false; // update indicator b4 exit
-      return;
+      // game over - you lose ! :(
+      tile.tileSVG = 'boom';
+      this.gameState = 'lose';
+    } else {
+      let unrevealedTiles = this.tiles.filter((t) => !t.revealed && !t.isMine);
+      let unexplodedMines = this.tiles.filter((t) => t.isMine && !t.revealed);
+
+      if (unrevealedTiles.length === 0 && unexplodedMines.length === this.mines) {
+        // game over - you win ! :)
+        this.gameState = 'win';
+      }
     }
 
-    let unrevealedTiles = this.tiles.filter((t) => !t.revealed && !t.isMine);
-    let unexplodedMines = this.tiles.filter((t) => t.isMine && !t.exploded);
-
-    // dont check win condition until after reveal is done 
-    if (unrevealedTiles.length === 0 && unexplodedMines.length === this.mines) {
-      // game over - you win ! :)
-      this.gameState = 'win';
+    if (this.gameState == 'win' || this.gameState == 'lose') {
       this.revealAll();
       this.toggleOverlay();
-
-      this.checkIndicator = false; // update indicator b4 exit
+      this.endGameEffect();
     }
 
     this.checkIndicator = false; // update indicator b4 exit
@@ -331,18 +333,51 @@ export class MineFieldComponent {
     return true; // completion indicator
   }
 
-  async detonateAll(): Promise<boolean> {
-    // Filter out unexploded mine tiles
-    const unexploded = this.tiles.filter(tile => tile.isMine && !tile.exploded);
+  async endGameEffect(): Promise<boolean> {
+    // prevent end game effect collision, if even possible
+    if (this.endEffectIndicator) return true;
 
-    // Randomize explode order
-    fisherYatesShuffle(unexploded);
+    this.endEffectIndicator = true;
 
-    // Explode unexploded mine tiles 1 by 1 with a delay
-    for (const bomb of unexploded) {
-      await this.delay(1500);
-      bomb.exploded = true;
+    // on lose, blow up mines
+    if (this.gameState == 'lose') {
+      // Filter out unexploded mine tiles
+      const unexploded = this.tiles.filter(tile => tile.isMine && tile.tileSVG != 'boom');
+
+      // Randomize explode order
+      fisherYatesShuffle(unexploded);
+
+      // Explode unexploded mine tiles 1 by 1 with a delay
+      for (const bomb of unexploded) {
+        if (!this.endEffectIndicator) break;
+
+        await this.delay(1500);
+        bomb.tileSVG = 'boom';
+      }
     }
+
+    // on win, convert everything to peace signs or hearts 
+    if (this.gameState == 'win') {
+      // Filter out unexploded mine tiles
+      const bombs = this.tiles.filter(tile => tile.isMine);
+
+      // ensure all bombs are bombs
+      bombs.forEach((bomb) => bomb.tileSVG = 'bomb');
+
+      // Randomize explode order
+      fisherYatesShuffle(bombs);
+
+      // Explode unexploded mine tiles 1 by 1 with a delay
+      for (const bomb of bombs) {
+        if (!this.endEffectIndicator) break;
+
+        await this.delay(500);
+        bomb.tileSVG = 'win';
+      }
+    }
+
+    // unflag indicator 
+    this.endEffectIndicator = false;
 
     return true; // completion indicator
   }
