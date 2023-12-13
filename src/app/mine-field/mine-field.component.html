@@ -31,8 +31,8 @@
             
             [style.background]="getBackgroundShade(tile)" 
             
-            (mousedown)="startCheck($event, tile)"
-            (mouseup)="endCheck($event, tile)"
+            (pointerdown)="startCheck($event, tile)"
+            (pointerup)="endCheck($event, tile)"
             (contextmenu)="$event.preventDefault()"
         >
         </app-tile>
