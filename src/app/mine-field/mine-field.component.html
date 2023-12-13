@@ -18,19 +18,10 @@
     </div>
 
     <div class="mine-field" [ngStyle]="{'--columns': x_cols, '--rows': y_rows}">
-        <app-tile 
-            class="tile" 
-            *ngFor="let tile of this.tiles" 
-
-            [revealed]="tile.revealed" 
-            [isMine]="tile.isMine"
-            [flagged]="tile.flagged" 
-            [adjacentMines]="tile.adjacentMines"
-            [tileSVG]="tile.tileSVG"
-            
-            [ngClass]="{'revealed-class': tile.revealed, 'flagged-class': tile.flagged}" 
-
-            (click)="checkTile(tile)"
+        <app-tile class="tile" *ngFor="let tile of this.tiles" [revealed]="tile.revealed" [isMine]="tile.isMine"
+            [flagged]="tile.flagged" [adjacentMines]="tile.adjacentMines" [tileSVG]="tile.tileSVG"
+            [ngClass]="{'revealed-class': tile.revealed, 'flagged-class': tile.flagged}"
+            [style.background]="getBackgroundShade(tile)" (click)="checkTile(tile)"
             (contextmenu)="$event.preventDefault(); flagTile(tile)">
         </app-tile>
 
@@ -65,4 +56,8 @@
             [ngClass]="{'rotate': this.showOverlay}">
         </div>
     </div>
+
+    <div class="bg"></div>
+    <div class="bg bg2"></div>
+    <div class="bg bg3"></div>
 </main>

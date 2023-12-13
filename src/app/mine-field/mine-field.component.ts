@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TileComponent } from '../tile/tile.component';
 import { fisherYatesShuffle } from './shuffle';
+import { map } from './map';
 
 @Component({
   selector: 'app-mine-field',
@@ -29,21 +30,32 @@ export class MineFieldComponent {
   private checkIndicator: boolean = false;
   private endEffectIndicator: boolean = false;
 
+  /**
+   * Constructs a new MineFieldComponent instance.
+   * Initializes the game based on the default or provided difficulty level upon component creation.
+   * Calls the initializeGame method with the default difficulty setting.
+   */
   constructor() {
-    // intializer function temporarily
     this.intializeGame(this.difficulty);
   }
 
   /**
-   * Intialize the game
+   * Initializes the game with the specified difficulty level.
+   * @param difficulty - The selected difficulty level: 'easy', 'medium', or 'hard'.
+   * Resets all game indicators and settings, generates tiles, and sets the game state to 'first'.
+   * This method serves as an entry point for starting or restarting the game.
    */
   intializeGame(difficulty: any) {
-    // interrupt any potetial reveal effects
+    // Interrupt any potential reveal effects and reset game indicators
     this.revealIndicator = false;
     this.endEffectIndicator = false;
     this.showOverlay = false;
+
+    // Set the initial game state to 'first' and update the selected difficulty
     this.gameState = 'first';
     this.difficulty = difficulty;
+
+    // Apply the chosen difficulty settings and generate new tiles
     this.setDifficulty(this.difficulty);
     this.generateTiles();
   }
@@ -58,17 +70,17 @@ export class MineFieldComponent {
       case 'easy':
         this.x_cols = 7;
         this.y_rows = 7;
-        this.mines = 3;
+        this.mines = 5;
         break;
       case 'medium':
         this.x_cols = 12;
         this.y_rows = 12;
-        this.mines = 20;
+        this.mines = 15;
         break;
       case 'hard':
         this.x_cols = 15;
         this.y_rows = 15;
-        this.mines = 1;
+        this.mines = 50;
         break;
     }
   }
@@ -88,6 +100,12 @@ export class MineFieldComponent {
     }
   }
 
+  /**
+   * Starts a new game with the same difficulty level.
+   * Stops any ongoing reveal effects or game-ending effects by setting corresponding indicators to false.
+   * Initializes a new game with the same difficulty level as the current game.
+   * Invokes the initializeGame method to reset the game with the same difficulty.
+   */
   newGame() {
     // stop reveal by setting flag; acts like an interrupt
     this.revealIndicator = false;
@@ -97,6 +115,13 @@ export class MineFieldComponent {
     this.intializeGame(this.difficulty);
   }
 
+  /**
+   * Retries the current game, resetting it to its initial state without changing the difficulty.
+   * Stops any ongoing reveal or end game effects by setting corresponding indicators to false.
+   * Waits for a short delay (10 milliseconds) to allow interruption of ongoing processes.
+   * Hides the overlay, changes the game state to 'game', and resets all tiles.
+   * Resets revealed and flagged states of tiles and resets mines to their default appearance if necessary.
+   */
   async retryGame() {
     // stop reveal by setting flag; acts like an interrupt
     this.revealIndicator = false;
@@ -105,9 +130,8 @@ export class MineFieldComponent {
     // wait for interrupt  
     await this.delay(10);
 
-    // hide overlay
+    // Hide the overlay and set the game state to 'game'
     this.showOverlay = false;
-    // skip first move generation check
     this.gameState = 'game';
 
     for (const tile of this.tiles) {
@@ -124,8 +148,11 @@ export class MineFieldComponent {
   }
 
   /**
-   * random mine placement.
-   * @param startIndex - index of first tile clicked to prevent first click game over
+   * Places mines randomly on the minefield.
+   * @param startIndex - Index of the first clicked tile to prevent an immediate game over.
+   * Utilizes a greedy algorithm to randomly place mines until the specified number of mines is reached.
+   * Updates the 'isMine' property and SVG appearance of tiles designated as mines.
+   * Updates the adjacentMines count for neighboring tiles of each mine.
    */
   placeMines(startIndex: number): void {
     // greedy algorithm, randomly try to place mines until all are placed
@@ -221,8 +248,11 @@ export class MineFieldComponent {
   }
 
   /**
-   * Checks a tile's state and initiate revealing if not flagged or revealed already.
-   * @param tile - The tile to check and reveal if allowed.
+   * Checks the state of a tile and initiates revealing if allowed.
+   * @param tile - The tile to check and potentially reveal.
+   * Manages various game states to prevent revealing after a game is won or lost.
+   * Handles revealing tiles based on flag and reveal status and triggers win/lose conditions accordingly.
+   * Updates game state and invokes necessary methods upon revealing all tiles or encountering a mine.
    */
   async checkTile(tile: TileComponent) {
     // prevent multiple checkTile runs at once
@@ -230,6 +260,9 @@ export class MineFieldComponent {
 
     // game over means nothing to check
     if (this.gameState == 'lose' || this.gameState == 'win') {
+      // if the overlay is hidden when clicking on game over, redeploy it 
+      if (!this.showOverlay) this.toggleOverlay();
+
       this.checkIndicator = false;
       return;
     }
@@ -272,6 +305,7 @@ export class MineFieldComponent {
       }
     }
 
+    // if the game ended, handle end game animation sequence
     if (this.gameState == 'win' || this.gameState == 'lose') {
       this.revealAll();
       this.toggleOverlay();
@@ -304,10 +338,10 @@ export class MineFieldComponent {
   }
 
   /**
- * Asynchronous function to reveal a tile and its adjacent tiles if they are empty.
- * Async allows for the delayed cascading effect
- * @param tile - The tile to reveal.
- */
+   * Asynchronous function to reveal a tile and its adjacent tiles if they are empty.
+   * Async allows for the delayed cascading effect
+   * @param tile - The tile to reveal.
+   */
   async revealTile(tile: TileComponent): Promise<boolean> {
     if (tile.revealed || tile.flagged) {
       return true; // completion indicator
@@ -318,13 +352,13 @@ export class MineFieldComponent {
     if (tile.adjacentMines === 0) {
       const adjacentTiles = this.getAdjacentTiles(tile);
 
-      // short time delay for cascade reveal effect
-      await this.delay(100);
-
       // Revealing adjacent tiles asynchronously using Promise.all
       await Promise.all(adjacentTiles.map(async (adjTile) => {
         // Check for interrupts before continuing the reveal process
         if (!this.revealIndicator) return;
+
+        // short time delay for cascade reveal effect
+        await this.delay(100);
 
         await this.revealTile(adjTile);
       }));
@@ -333,6 +367,12 @@ export class MineFieldComponent {
     return true; // completion indicator
   }
 
+  /**
+   * Initiates end-game effects based on the game outcome (win or lose).
+   * @returns A promise indicating the completion of end-game effects.
+   * Manages different effects for game win or loss: explosion animation for mines on loss,
+   * conversion of all mines to victory signs on win.
+   */
   async endGameEffect(): Promise<boolean> {
     // prevent end game effect collision, if even possible
     if (this.endEffectIndicator) return true;
@@ -395,7 +435,22 @@ export class MineFieldComponent {
     });
   }
 
+   /**
+   * Toggles the visibility of the overlay.
+   * Toggles the 'showOverlay' property to display or hide the overlay UI element.
+   */
   toggleOverlay() {
     this.showOverlay = !this.showOverlay;
+  }
+
+  /**
+   * Computes the background shade for a tile based on the number of adjacent mines.
+   * Calculates the HSL color value representing the background shade corresponding to the number of adjacent mines.
+   * @param tile - The tile for which the background shade is determined.
+   * @returns A string representing the HSL color value for the tile's background shade.
+   */
+  getBackgroundShade(tile: TileComponent): string {
+    const lightness = map(tile.adjacentMines, 0, 8, 95, 70);
+    return `hsl(240, 66.666%, ${lightness}%)`;
   }
 }

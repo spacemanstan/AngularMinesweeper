@@ -8,6 +8,18 @@ main {
     align-items: center;
     justify-content: center;
 
+    @media (max-width: 450px) {
+        height: 90dvh;
+
+        // prevent highlight on mobile
+        -webkit-user-select: none;
+        /* Safari */
+        -ms-user-select: none;
+        /* IE 10 and IE 11 */
+        user-select: none;
+        /* Standard syntax */
+    }
+
     .game-info {
         width: min(65vw, 65vh);
         position: relative;
@@ -16,6 +28,10 @@ main {
         // scale face up
         .face {
             font-size: 2rem;
+            // alignment to center horizontally
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .dimensions {
@@ -24,6 +40,10 @@ main {
 
         .current-difficulty {
             float: right;
+        }
+
+        @media (max-width: 450px) {
+            width: min(85vw, 85vh);
         }
     }
 
@@ -191,6 +211,31 @@ main {
                     }
                 }
             }
+
+            @media (max-width: 450px) {
+                button {
+                    padding: 0.25rem;
+                }
+
+                span {
+
+                    // title text bigger
+                    &.status h3 {
+                        font-size: 80%;
+                        margin-bottom: 0.5rem;
+                    }
+
+                    &.change-diff {
+                        .difficulties {
+                            margin: .25rem 0;
+
+                            button:not(:first-of-type):not(:last-of-type) {
+                                margin: 0;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // gear icon to toggle overlay
@@ -200,7 +245,7 @@ main {
             content: "\f013";
             font-weight: 900;
             font-size: 1.75rem;
-            color: hsl(219 50% 45% / 1);
+            color: black;
 
             // indicate clickable
             cursor: pointer;
@@ -219,9 +264,39 @@ main {
                 transform: rotate(180deg);
             }
         }
+
+        @media (max-width: 450px) {
+            width: min(95vw, 95vh);
+        }
+    }
+
+    // background stuff
+    .bg {
+        background-image: linear-gradient(-60deg, #fff3dd 60%, coral 40%);
+        opacity: .5;
+
+        position: fixed;
+        top: 0;
+        left: -50%;
+        right: -50%;
+        bottom: 0;
+
+        animation: slide 6s ease-in-out infinite alternate;
+
+        z-index: -1;
+    }
+
+    .bg2 {
+        animation-direction: alternate-reverse;
+        animation-duration: 8s;
+    }
+
+    .bg3 {
+        animation-duration:10s;
     }
 }
 
+// for button animation on overlay 
 @keyframes gradient {
     0% {
         background-position: 0% 50%;
@@ -235,3 +310,13 @@ main {
         background-position: 0% 50%;
     }
 }
+
+// for background animation
+@keyframes slide {
+    0% {
+      transform:translateX(-25%);
+    }
+    100% {
+      transform:translateX(25%);
+    }
+  }
