@@ -32,7 +32,8 @@ export class MineFieldComponent {
 
   // long press touch tracking variables
   private clickStartTime = 0;
-  private clickThreshold = 1000; // ms
+  private clickThreshold = 250; // ms
+  private clickInterval: any;
 
   /**
    * Constructs a new MineFieldComponent instance.
@@ -79,7 +80,7 @@ export class MineFieldComponent {
       case 'medium':
         this.x_cols = 12;
         this.y_rows = 12;
-        this.mines = 15;
+        this.mines = 25;
         break;
       case 'hard':
         this.x_cols = 15;
@@ -259,18 +260,30 @@ export class MineFieldComponent {
   startCheck(event: MouseEvent, tile: TileComponent) {
     event.preventDefault();
 
-    if(this.checkIndicator) return;
+    if (this.checkIndicator) return;
 
     this.checkIndicator = true;
-
-    // left click 
-    if (event.button === 0) {
-      this.clickStartTime = Date.now();
-    }
 
     // right-click
     if (event.button === 2) {
       this.clickStartTime -= this.clickThreshold;
+    }
+
+    // left click
+    if (event.button === 0) {
+      this.clickStartTime = Date.now();
+
+      this.clickInterval = setInterval(() => {
+        const currentTime = Date.now();
+        const duration = currentTime - this.clickStartTime;
+
+        if (duration >= this.clickThreshold) {
+          // threshold exceeding
+          this.flagTile(tile);
+          clearInterval(this.clickInterval); // Clear the interval once the threshold is reached
+          this.checkIndicator = false;
+        }
+      }, 100); // Check every 100ms
     }
   }
 
@@ -282,12 +295,16 @@ export class MineFieldComponent {
   endCheck(event: MouseEvent, tile: TileComponent) {
     event.preventDefault();
 
+    if(!this.checkIndicator) return; // check already concluded 
+
     const clickEndTime = Date.now();
     const clickDuration = clickEndTime - this.clickStartTime;
 
-    if(clickDuration < this.clickThreshold) {
+    if (clickDuration < this.clickThreshold) {
       this.checkTile(tile);
-    } else {
+    }
+
+    if (clickDuration >= this.clickThreshold) {
       this.flagTile(tile);
     }
 
