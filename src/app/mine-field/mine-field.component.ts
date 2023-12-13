@@ -30,6 +30,10 @@ export class MineFieldComponent {
   private checkIndicator: boolean = false;
   private endEffectIndicator: boolean = false;
 
+  // long press touch tracking variables
+  private clickStartTime = 0;
+  private clickThreshold = 1000; // ms
+
   /**
    * Constructs a new MineFieldComponent instance.
    * Initializes the game based on the default or provided difficulty level upon component creation.
@@ -248,6 +252,49 @@ export class MineFieldComponent {
   }
 
   /**
+   * Initiates the check or flag process based on mouse down event.
+   * @param event - The mouse event triggering the check or flag.
+   * @param tile - The tile to be checked or flagged.
+   */
+  startCheck(event: MouseEvent, tile: TileComponent) {
+    event.preventDefault();
+
+    if(this.checkIndicator) return;
+
+    this.checkIndicator = true;
+
+    // left click 
+    if (event.button === 0) {
+      this.clickStartTime = Date.now();
+    }
+
+    // right-click
+    if (event.button === 2) {
+      this.clickStartTime -= this.clickThreshold;
+    }
+  }
+
+  /**
+  * Ends the check or flag process based on mouse up event.
+  * @param event - The mouse event triggering the end of the check or flag.
+  * @param tile - The tile associated with the mouse event.
+  */
+  endCheck(event: MouseEvent, tile: TileComponent) {
+    event.preventDefault();
+
+    const clickEndTime = Date.now();
+    const clickDuration = clickEndTime - this.clickStartTime;
+
+    if(clickDuration < this.clickThreshold) {
+      this.checkTile(tile);
+    } else {
+      this.flagTile(tile);
+    }
+
+    this.checkIndicator = false;
+  }
+
+  /**
    * Checks the state of a tile and initiates revealing if allowed.
    * @param tile - The tile to check and potentially reveal.
    * Manages various game states to prevent revealing after a game is won or lost.
@@ -255,20 +302,16 @@ export class MineFieldComponent {
    * Updates game state and invokes necessary methods upon revealing all tiles or encountering a mine.
    */
   async checkTile(tile: TileComponent) {
-    // prevent multiple checkTile runs at once
-    if (this.checkIndicator) return;
+    // caling this function also constitues an endCheck
+    this.checkIndicator = false;
+    const clickEndTime = Date.now();
 
     // game over means nothing to check
     if (this.gameState == 'lose' || this.gameState == 'win') {
       // if the overlay is hidden when clicking on game over, redeploy it 
       if (!this.showOverlay) this.toggleOverlay();
-
-      this.checkIndicator = false;
       return;
     }
-
-    // signal check in progress
-    this.checkIndicator = true;
 
     // first move loss prevention
     if (this.gameState == 'first') {
@@ -279,7 +322,6 @@ export class MineFieldComponent {
 
     // if not flagged or revealed, then reveal
     if (tile.flagged || tile.revealed) {
-      this.checkIndicator = false; // update indicator b4 exit
       return;
     }
 
@@ -312,7 +354,6 @@ export class MineFieldComponent {
       this.endGameEffect();
     }
 
-    this.checkIndicator = false; // update indicator b4 exit
   }
 
   /**
@@ -435,10 +476,10 @@ export class MineFieldComponent {
     });
   }
 
-   /**
-   * Toggles the visibility of the overlay.
-   * Toggles the 'showOverlay' property to display or hide the overlay UI element.
-   */
+  /**
+  * Toggles the visibility of the overlay.
+  * Toggles the 'showOverlay' property to display or hide the overlay UI element.
+  */
   toggleOverlay() {
     this.showOverlay = !this.showOverlay;
   }
