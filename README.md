@@ -6,6 +6,16 @@ Minefield manages the state of the tiles and utilizes async function calls to cr
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.0.3.
 
+## controls
+
+left click: reveal tile
+left click (long press): flag tile
+right click: flag tile 
+
+## Game
+
+![screenshot](src/assets/Screenshot.png)
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
