@@ -18,11 +18,23 @@
     </div>
 
     <div class="mine-field" [ngStyle]="{'--columns': x_cols, '--rows': y_rows}">
-        <app-tile class="tile" *ngFor="let tile of this.tiles" [revealed]="tile.revealed" [isMine]="tile.isMine"
-            [flagged]="tile.flagged" [adjacentMines]="tile.adjacentMines" [tileSVG]="tile.tileSVG"
+        <app-tile class="tile" 
+            *ngFor="let tile of this.tiles" 
+            [revealed]="tile.revealed" 
+            [isMine]="tile.isMine"
+            
+            [flagged]="tile.flagged" 
+            [adjacentMines]="tile.adjacentMines" 
+            [tileSVG]="tile.tileSVG"
+            
             [ngClass]="{'revealed-class': tile.revealed, 'flagged-class': tile.flagged}"
-            [style.background]="getBackgroundShade(tile)" (click)="checkTile(tile)"
-            (contextmenu)="$event.preventDefault(); flagTile(tile)">
+            
+            [style.background]="getBackgroundShade(tile)" 
+            
+            (mousedown)="startCheck($event, tile)"
+            (mouseup)="endCheck($event, tile)"
+            (contextmenu)="$event.preventDefault()"
+        >
         </app-tile>
 
         <div class="overlay" [ngClass]="{'overlay': true, 'visible': showOverlay, 'hidden': !showOverlay}">
