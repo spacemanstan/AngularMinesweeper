@@ -1,6 +1,8 @@
 # AngularMinesweeper
 My attempt at writing minesweeper using the Angular framework to better learn Angular
 
+Try the game [here](https://spacemanstan.github.io/AngularMinesweeper/)
+
 The mine-field component holds an array of tile components that initialize based on Input() parameters.
 Minefield manages the state of the tiles and utilizes async function calls to create animations and handle multiple gameplay aspects simultaneously, I created a simple boolean indicator system that is akin to a binary semaphore or mutex in behaviour that allows async operations to be stopped without having to manage their promises or track them. The game features three difficulties, and currently only suppourts square game boards / minefields.
 
